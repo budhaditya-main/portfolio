@@ -1,1654 +1,1143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Budhaditya Sanyal — Exploring & Optimizing</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg-primary: #050505;
-            --bg-secondary: #0d0d0d;
-            --bg-tertiary: #1a1a1a;
-            --text-primary: #f0f0f0;
-            --text-secondary: #8a8a8a;
-            --accent: #00ffcc;
-            --accent-dim: #00ccaa;
-            --accent-alt: #ff006e;
-            --border: #1f1f1f;
-            --glow: rgba(0, 255, 204, 0.2);
-            --glow-alt: rgba(255, 0, 110, 0.15);
-        }
-
-        body {
-            font-family: 'Syne', -apple-system, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        /* Floating gradient orbs */
-        body::after {
-            content: '';
-            position: fixed;
-            top: -50%;
-            right: -20%;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, var(--glow) 0%, transparent 70%);
-            pointer-events: none;
-            z-index: 0;
-            animation: float 20s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            33% { transform: translate(-30px, -50px) rotate(120deg); }
-            66% { transform: translate(30px, 30px) rotate(240deg); }
-        }
-
-        /* Animated grain overlay */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
-            pointer-events: none;
-            z-index: 1000;
-            animation: grain 8s steps(10) infinite;
-            opacity: 0.3;
-        }
-
-        @keyframes grain {
-            0%, 100% { transform: translate(0, 0); }
-            10% { transform: translate(-5%, -10%); }
-            20% { transform: translate(-15%, 5%); }
-            30% { transform: translate(7%, -25%); }
-            40% { transform: translate(-5%, 25%); }
-            50% { transform: translate(-15%, 10%); }
-            60% { transform: translate(15%, 0%); }
-            70% { transform: translate(0%, 15%); }
-            80% { transform: translate(3%, 10%); }
-            90% { transform: translate(-10%, 5%); }
-        }
-
-        /* Cursor */
-        .cursor {
-            width: 20px;
-            height: 20px;
-            border: 1px solid var(--accent);
-            border-radius: 50%;
-            position: fixed;
-            pointer-events: none;
-            z-index: 9999;
-            transition: all 0.1s ease;
-            transform: translate(-50%, -50%);
-        }
-
-        .cursor-dot {
-            width: 4px;
-            height: 4px;
-            background: var(--accent);
-            border-radius: 50%;
-            position: fixed;
-            pointer-events: none;
-            z-index: 9999;
-            transition: all 0.05s ease;
-            transform: translate(-50%, -50%);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        /* Header */
-        header {
-            padding: 2rem 0;
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            background: rgba(10, 10, 10, 0.8);
-            backdrop-filter: blur(10px);
-            z-index: 100;
-            animation: slideDown 0.6s ease;
-        }
-
-        @keyframes slideDown {
-            from {
-                transform: translateY(-100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--accent);
-            letter-spacing: -0.02em;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 400;
-            transition: color 0.3s ease;
-            position: relative;
-        }
-
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 0;
-            height: 1px;
-            background: var(--accent);
-            transition: width 0.3s ease;
-        }
-
-        .nav-links a:hover {
-            color: var(--accent);
-        }
-
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        /* Hero */
-        .hero {
-            padding: 8rem 0 6rem;
-            position: relative;
-            animation: fadeIn 1s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .hero-title {
-            font-size: clamp(2.2rem, 5vw, 4.2rem);
-            font-weight: 700;
-            line-height: 1.2;
-            margin-bottom: 1.5rem;
-            letter-spacing: -0.02em;
-        }
-
-        .hero-title .highlight {
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-alt) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            position: relative;
-            display: inline-block;
-        }
-
-        .hero-subtitle {
-            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
-            color: var(--text-secondary);
-            font-weight: 300;
-            margin-bottom: 2rem;
-            max-width: 700px;
-        }
-
-        .hero-description {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            max-width: 650px;
-            line-height: 1.8;
-            margin-bottom: 3rem;
-        }
-
-        .cta-group {
-            display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 1rem 2rem;
-            border-radius: 4px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            display: inline-block;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-primary {
-            background: var(--accent);
-            color: var(--bg-primary);
-            border: 1px solid var(--accent);
-        }
-
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: var(--accent-dim);
-            transition: left 0.3s ease;
-            z-index: -1;
-        }
-
-        .btn-primary:hover::before {
-            left: 0;
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-            box-shadow: 0 0 20px var(--glow);
-        }
-
-        /* Section styles */
-        section {
-            padding: 6rem 0;
-            border-top: 1px solid var(--border);
-        }
-
-        .section-label {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            margin-bottom: 0.5rem;
-        }
-
-        .section-title {
-            font-size: clamp(2rem, 4vw, 3rem);
-            font-weight: 700;
-            margin-bottom: 3rem;
-            letter-spacing: -0.02em;
-            color: var(--text-primary);
-        }
-
-        /* Experience cards */
-        .experience-grid {
-            display: grid;
-            gap: 2rem;
-        }
-
-        .experience-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 2rem;
-            transition: all 0.4s ease;
-            position: relative;
-        }
-
-        .experience-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--accent), transparent);
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.4s ease;
-        }
-
-        .experience-card:hover {
-            border-color: var(--accent);
-            transform: translateY(-4px);
-            box-shadow: 0 8px 30px rgba(0, 255, 136, 0.1);
-        }
-
-        .experience-card:hover::before {
-            transform: scaleX(1);
-        }
-
-        .experience-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .experience-title {
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .experience-period {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .experience-company {
-            font-size: 1.1rem;
-            color: var(--accent);
-            margin-bottom: 0.5rem;
-        }
-
-        .experience-location {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            margin-bottom: 1rem;
-        }
-
-        .experience-description {
-            color: var(--text-secondary);
-            line-height: 1.7;
-        }
-
-        .experience-description ul {
-            list-style: none;
-            margin-top: 1rem;
-        }
-
-        .experience-description li {
-            padding-left: 1.5rem;
-            margin-bottom: 0.5rem;
-            position: relative;
-        }
-
-        .experience-description li::before {
-            content: '▹';
-            position: absolute;
-            left: 0;
-            color: var(--accent);
-        }
-
-        /* Skills */
-        .skills-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-        }
-
-        .skill-category {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 2rem;
-            transition: all 0.3s ease;
-        }
-
-        .skill-category:hover {
-            border-color: var(--accent);
-            box-shadow: 0 4px 20px var(--glow);
-        }
-
-        .skill-category h3 {
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-            color: var(--accent);
-        }
-
-        .skill-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .skill-tag {
-            background: rgba(0, 255, 136, 0.1);
-            color: var(--text-primary);
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            border: 1px solid transparent;
-            transition: all 0.3s ease;
-        }
-
-        .skill-tag:hover {
-            border-color: var(--accent);
-            background: rgba(0, 255, 136, 0.2);
-        }
-
-        /* Stats */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        .stat-card {
-            text-align: center;
-            padding: 2rem;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .stat-card:hover {
-            border-color: var(--accent);
-            transform: scale(1.05);
-        }
-
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--accent);
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
-        }
-
-        /* Contact */
-        .contact-content {
-            max-width: 600px;
-            margin: 0 auto;
-            text-align: center;
-        }
-
-        .contact-text {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
-            line-height: 1.8;
-        }
-
-        .contact-email {
-            font-size: 1.5rem;
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--accent);
-            margin-bottom: 2rem;
-            display: inline-block;
-            cursor: pointer;
-            position: relative;
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            transition: all 0.3s ease;
-        }
-
-        .contact-email:hover {
-            border-color: var(--accent);
-            box-shadow: 0 0 30px var(--glow);
-            transform: translateY(-2px);
-        }
-
-        .social-links {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-top: 2rem;
-        }
-
-        .social-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-        }
-
-        .social-link:hover {
-            color: var(--accent);
-            border-color: var(--accent);
-            box-shadow: 0 0 20px var(--glow);
-        }
-
-        /* Footer */
-        footer {
-            padding: 3rem 0;
-            border-top: 1px solid var(--border);
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        /* Animations */
-        .fade-in {
-            opacity: 0;
-            transform: translateY(30px);
-            animation: fadeInUp 0.8s ease forwards;
-        }
-
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .fade-in:nth-child(1) { animation-delay: 0.1s; }
-        .fade-in:nth-child(2) { animation-delay: 0.2s; }
-        .fade-in:nth-child(3) { animation-delay: 0.3s; }
-        .fade-in:nth-child(4) { animation-delay: 0.4s; }
-        .fade-in:nth-child(5) { animation-delay: 0.5s; }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .nav-links {
-                gap: 1rem;
-            }
-
-            .hero {
-                padding: 4rem 0 3rem;
-            }
-
-            section {
-                padding: 4rem 0;
-            }
-
-            .cta-group {
-                flex-direction: column;
-            }
-
-            .btn {
-                text-align: center;
-            }
-
-            .cursor, .cursor-dot {
-                display: none;
-            }
-        }
-
-        /* Scroll indicator */
-        .scroll-indicator {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 3px;
-            background: var(--accent);
-            z-index: 1001;
-            transition: width 0.1s ease;
-        }
-
-        /* Passion section */
-        .passion-section {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 3rem;
-            margin: 4rem 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .passion-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, var(--glow) 0%, var(--glow-alt) 100%);
-            opacity: 0.05;
-            pointer-events: none;
-        }
-
-        .passion-section h3 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            color: var(--text-primary);
-        }
-
-        .passion-section p {
-            font-size: 1.15rem;
-            line-height: 1.9;
-            color: var(--text-secondary);
-            position: relative;
-            z-index: 1;
-        }
-
-        .passion-section strong {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        /* Game section */
-        .game-container {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 3rem;
-            margin-top: 4rem;
-            text-align: center;
-        }
-
-        .game-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            color: var(--accent);
-        }
-
-        .game-subtitle {
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
-            font-size: 0.95rem;
-        }
-
-        #gameCanvas {
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-primary);
-            max-width: 100%;
-            cursor: crosshair;
-            box-shadow: 0 0 30px var(--glow);
-        }
-
-        .game-score {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.5rem;
-            margin-top: 1.5rem;
-            color: var(--accent);
-        }
-
-        .game-instructions {
-            margin-top: 1rem;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .game-controls {
-            margin-top: 1.5rem;
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .game-btn {
-            padding: 0.75rem 1.5rem;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .game-btn:hover {
-            border-color: var(--accent);
-            box-shadow: 0 0 20px var(--glow);
-            transform: translateY(-2px);
-        }
-
-        .game-btn.active {
-            background: var(--accent);
-            color: var(--bg-primary);
-            border-color: var(--accent);
-        }
-    </style>
-</head>
-<body>
-    <div class="cursor"></div>
-    <div class="cursor-dot"></div>
-    <div class="scroll-indicator"></div>
-
-    <header>
-        <nav class="container">
-            <div class="logo">BS.</div>
-            <ul class="nav-links">
-                <li><a href="#about">About</a></li>
-                <li><a href="#experience">Experience</a></li>
-                <li><a href="#skills">Skills</a></li>
-                <li><a href="#game">Game</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
-
-    <main>
-        <!-- Hero -->
-        <section class="hero container" id="about">
-            <div class="section-label"> - Exploring And Optimizing </div>
-            <h1 class="hero-title">
-                Hey, I'm <span class="highlight">Budhaditya</span>.<br>
-                I build things that matter.
-            </h1>
-            <p class="hero-subtitle">
-                Third-year student with real-world experience in B2B sales, game development, and startup growth.
-            </p>
-            <p class="hero-description">
-                I started making things that I wanted to use for myself. Some didn't work out. Some did. One of the games surprised me because of
-                huge player engagement and revenue. Another place I was helping raise seed-funding. Well I know this isn't enough but I'm just
-                understanding and optimizing my way through the learning curve. Currently a 3rd year srudent at Christ University, Bangalore while exploring
-                LLMs,ai-chatbots in Computational developments-most likely lingustics, and figuring out how do I want to shape my career. I did add a chatbot on this website, so try it out.
-                
-            </p>
-            <div class="cta-group">
-                <a href="#contact" class="btn btn-primary">Get in touch</a>
-                <a href="#experience" class="btn btn-secondary">View my work</a>
-            </div>
-
-            <!-- Passion Section -->
-            <div class="passion-section fade-in">
-                <h3>What Drives Me</h3>
-                <p>
-                    I'm fascinated by the intersection of <strong>human connection</strong>, <strong>intelligent systems</strong>, and <strong>interactive experiences</strong>. 
-                    Sales isn't just about closing deals, it's about understanding people, solving real problems, and building relationships that matter. 
-                    Working with <strong>LLMs</strong> lets me explore how we can augment human capabilities and create tools that genuinely help people think and work better. 
-                    And game development? That's where creativity meets technical challenge-designing systems that people don't just use, but actually <em>enjoy</em> and remember.
-                    <br><br>
-                    Whether I'm pitching to investors, training a language model, or crafting a game mechanic, the core is the same: 
-                    <strong>create something that resonates</strong>. Something that makes someone's day better, easier, or more interesting. 
-                    That's what gets me excited to wake up and build.
-                </p>
-            </div>
-        </section>
-
-        <!-- Stats -->
-        <section class="container">
-            <div class="stats-grid">
-                <div class="stat-card fade-in">
-                    <div class="stat-number">$10K+</div>
-                    <div class="stat-label">Revenue in first week</div>
-                </div>
-                <div class="stat-card fade-in">
-                    <div class="stat-number">₹1.2Cr</div>
-                    <div class="stat-label">Seed funding raised</div>
-                </div>
-                <div class="stat-card fade-in">
-                    <div class="stat-number">4+</div>
-                    <div class="stat-label">Games shipped</div>
-                </div>
-                <div class="stat-card fade-in">
-                    <div class="stat-number">₹3L+</div>
-                    <div class="stat-label">Sponsorships secured</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Game Section -->
-        <section class="container" id="game">
-            <div class="game-container fade-in">
-                <div class="game-title">DEFEND THE THRONE</div>
-                <div class="game-subtitle">A little time-pass game. Click to shoot the falling enemies!</div>
-                <canvas id="gameCanvas" width="600" height="400"></canvas>
-                <div class="game-score">
-                    <span>SCORE: <span id="score">0</span></span> | 
-                    <span>LIVES: <span id="lives">3</span></span>
-                </div>
-                <div class="game-instructions">
-                    Click anywhere on the canvas to shoot. Don't let enemies reach the bottom!
-                </div>
-                <div class="game-controls">
-                    <button class="game-btn active" onclick="startGame()">START</button>
-                    <button class="game-btn" onclick="pauseGame()">PAUSE</button>
-                    <button class="game-btn" onclick="resetGame()">RESET</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- Experience -->
-        <section class="container" id="experience">
-            <div class="section-label">— WHAT I'VE DONE</div>
-            <h2 class="section-title">Experience</h2>
-            
-            <div class="experience-grid">
-                <div class="experience-card fade-in">
-                    <div class="experience-header">
-                        <div>
-                            <div class="experience-title">GTM & Partnerships</div>
-                            <div class="experience-company">EarlyJobs</div>
-                            <div class="experience-location">Bangalore, India</div>
-                        </div>
-                        <div class="experience-period">Mar 2025 - Jun 2025</div>
-                    </div>
-                    <div class="experience-description">
-                        <ul>
-                            <li>Part of investor relations team that raised ₹1.2 Cr in seed funding</li>
-                            <li>Onboarded major clients including JustDial, Quess Corps, RBL Bank, and YES Bank</li>
-                            <li>Managed strategic partnerships and B2B inside sales</li>
-                            <li>Drove platform visibility and user engagement strategies</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="experience-card fade-in">
-                    <div class="experience-header">
-                        <div>
-                            <div class="experience-title">Team Lead / B2B Sales</div>
-                            <div class="experience-company">SurgeHouse</div>
-                            <div class="experience-location">Bengaluru, India</div>
-                        </div>
-                        <div class="experience-period">Oct 2023 - Oct 2024</div>
-                    </div>
-                    <div class="experience-description">
-                        <ul>
-                            <li>Conducted market analysis to identify high-value opportunities</li>
-                            <li>Optimized lead generation and prospecting through data-driven strategies</li>
-                            <li>Marketed company benefits to Angel Investors</li>
-                            <li>Led business growth initiatives across multiple verticals</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="experience-card fade-in">
-                    <div class="experience-header">
-                        <div>
-                            <div class="experience-title">Game Developer & Marketing Head</div>
-                            <div class="experience-company">Multiple Game Studios (Roblox)</div>
-                            <div class="experience-location">San Francisco, California</div>
-                        </div>
-                        <div class="experience-period">Feb 2020 - Jan 2024</div>
-                    </div>
-                    <div class="experience-description">
-                        <ul>
-                            <li>Designed weaponry, 3D clothing, and environments for Attack on Titan, Snowpiercer, One Piece, and more</li>
-                            <li>Generated $10K+ revenue in the first week of game launch</li>
-                            <li>Led projects that became top player engagement games in Q1</li>
-                            <li>Collaborated with angel investors and stakeholders for game rights</li>
-                            <li>Optimized 3D assets contributing to millions of visits</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="experience-card fade-in">
-                    <div class="experience-header">
-                        <div>
-                            <div class="experience-title">Sales & Business Development</div>
-                            <div class="experience-company">Cook & Klean</div>
-                            <div class="experience-location">Bangalore, India</div>
-                        </div>
-                        <div class="experience-period">Feb 2025 - Mar 2025</div>
-                    </div>
-                    <div class="experience-description">
-                        <ul>
-                            <li>Led lead generation and customer outreach initiatives</li>
-                            <li>Collaborated with marketing team on conversion optimization</li>
-                            <li>Analyzed sales data to identify trends and improve engagement</li>
-                            <li>Gained hands-on CRM and sales strategy experience</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="experience-card fade-in">
-                    <div class="experience-header">
-                        <div>
-                            <div class="experience-title">Special Ed Intern</div>
-                            <div class="experience-company">Cohesive Minds for Mental Health Foundation</div>
-                            <div class="experience-location">Surat, India</div>
-                        </div>
-                        <div class="experience-period">May 2024 - Jul 2024</div>
-                    </div>
-                    <div class="experience-description">
-                        <ul>
-                            <li>Designed 6-month curriculum for children with learning disabilities and ADHD</li>
-                            <li>Organized seminars with psychologists and mental health awareness webinars</li>
-                            <li>Secured ₹90K title sponsorship for flagship event</li>
-                            <li>Contributed to overall NGO formation and development</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Skills -->
-        <section class="container" id="skills">
-            <div class="section-label">— CAPABILITIES</div>
-            <h2 class="section-title">Skills & Expertise</h2>
-            
-            <div class="skills-container">
-                <div class="skill-category fade-in">
-                    <h3>Business & Sales</h3>
-                    <div class="skill-tags">
-                        <span class="skill-tag">B2B Sales</span>
-                        <span class="skill-tag">Lead Generation</span>
-                        <span class="skill-tag">Prospecting</span>
-                        <span class="skill-tag">Cold Calling</span>
-                        <span class="skill-tag">CRM</span>
-                        <span class="skill-tag">Partnerships</span>
-                    </div>
-                </div>
-
-                <div class="skill-category fade-in">
-                    <h3>Product & Marketing</h3>
-                    <div class="skill-tags">
-                        <span class="skill-tag">GTM Strategy</span>
-                        <span class="skill-tag">Market Research</span>
-                        <span class="skill-tag">Customer Acquisition</span>
-                        <span class="skill-tag">Storytelling</span>
-                        <span class="skill-tag">Event Planning</span>
-                    </div>
-                </div>
-
-                <div class="skill-category fade-in">
-                    <h3>Technical</h3>
-                    <div class="skill-tags">
-                        <span class="skill-tag">3D Modeling</span>
-                        <span class="skill-tag">Game Development</span>
-                        <span class="skill-tag">Fullstack Dev</span>
-                        <span class="skill-tag">LLMs</span>
-                        <span class="skill-tag">Data Analysis</span>
-                    </div>
-                </div>
-
-                <div class="skill-category fade-in">
-                    <h3>Leadership & Soft Skills</h3>
-                    <div class="skill-tags">
-                        <span class="skill-tag">Team Leadership</span>
-                        <span class="skill-tag">Communication</span>
-                        <span class="skill-tag">Public Speaking</span>
-                        <span class="skill-tag">Problem Solving</span>
-                        <span class="skill-tag">Project Management</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Contact -->
-        <section class="container" id="contact">
-            <div class="section-label">— LET'S CONNECT</div>
-            <h2 class="section-title">Get in Touch</h2>
-            
-            <div class="contact-content">
-                <p class="contact-text">
-                    Currently open to opportunities in product, growth, and business development. 
-                    Whether you're building something exciting or just want to chat, I'd love to hear from you.
-                </p>
-                
-                <div class="contact-email" id="emailDisplay" onclick="revealEmail()">
-                    Click to reveal email
-                </div>
-
-                <div class="social-links">
-                    <a href="https://www.linkedin.com/in/budhaditya-sanyal-52ba1a244/" target="_blank" rel="noopener noreferrer" class="social-link">LinkedIn</a>
-                    <a href="tel:+919265838747" class="social-link">Phone</a>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Budhaditya Sanyal.</p>
-        </div>
-    </footer>
-
-    <script>
-        // Custom cursor
-        const cursor = document.querySelector('.cursor');
-        const cursorDot = document.querySelector('.cursor-dot');
-
-        document.addEventListener('mousemove', (e) => {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
-            cursorDot.style.left = e.clientX + 'px';
-            cursorDot.style.top = e.clientY + 'px';
-        });
-
-        // Cursor hover effects
-        document.querySelectorAll('a, button, .experience-card').forEach(el => {
-            el.addEventListener('mouseenter', () => {
-                cursor.style.transform = 'translate(-50%, -50%) scale(1.5)';
-                cursor.style.backgroundColor = 'rgba(0, 255, 136, 0.1)';
-            });
-            el.addEventListener('mouseleave', () => {
-                cursor.style.transform = 'translate(-50%, -50%) scale(1)';
-                cursor.style.backgroundColor = 'transparent';
-            });
-        });
-
-        // Scroll progress indicator
-        window.addEventListener('scroll', () => {
-            const scrollProgress = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
-            document.querySelector('.scroll-indicator').style.width = scrollProgress + '%';
-        });
-
-        // Fade in on scroll
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -100px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, observerOptions);
-
-        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-
-        // Email protection - decoded client-side only
-        function revealEmail() {
-            const user = 'budhaditya3211';
-            const domain = 'gmail.com';
-            const email = user + '@' + domain;
-            
-            const emailDisplay = document.getElementById('emailDisplay');
-            emailDisplay.textContent = email;
-            emailDisplay.style.cursor = 'text';
-            emailDisplay.onclick = null;
-            
-            // Create mailto link
-            const mailto = document.createElement('a');
-            mailto.href = 'mailto:' + email;
-            mailto.textContent = email;
-            mailto.className = 'contact-email';
-            mailto.style.textDecoration = 'none';
-            emailDisplay.replaceWith(mailto);
-        }
-
-        // Smooth scroll
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // Prevent email scraping via console warning
-        console.log('%c⚠️ Warning', 'color: #00ffcc; font-size: 20px; font-weight: bold;');
-        console.log('%cThis portfolio uses client-side email protection. Email addresses are not exposed in the source code.', 'color: #999; font-size: 14px;');
-
-        // ===== NEON DEFENDER GAME =====
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        let gameState = {
-            running: false,
-            paused: false,
-            score: 0,
-            lives: 3,
-            enemies: [],
-            bullets: [],
-            particles: [],
-            enemySpawnRate: 60,
-            frameCount: 0
-        };
-
-        class Enemy {
-            constructor() {
-                this.x = Math.random() * (canvas.width - 30);
-                this.y = -30;
-                this.width = 30;
-                this.height = 30;
-                this.speed = 1 + Math.random() * 2;
-                this.color = Math.random() > 0.5 ? '#ff006e' : '#00ffcc';
-            }
-
-            update() {
-                this.y += this.speed;
-            }
-
-            draw() {
-                ctx.save();
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = this.color;
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                
-                // Inner glow
-                ctx.globalAlpha = 0.5;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(this.x + 10, this.y + 10, 10, 10);
-                ctx.restore();
-            }
-
-            isOffScreen() {
-                return this.y > canvas.height;
-            }
-        }
-
-        class Bullet {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.width = 4;
-                this.height = 15;
-                this.speed = 8;
-                this.color = '#00ffcc';
-            }
-
-            update() {
-                this.y -= this.speed;
-            }
-
-            draw() {
-                ctx.save();
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = this.color;
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x - this.width / 2, this.y, this.width, this.height);
-                ctx.restore();
-            }
-
-            isOffScreen() {
-                return this.y < -20;
-            }
-        }
-
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.vx = (Math.random() - 0.5) * 8;
-                this.vy = (Math.random() - 0.5) * 8;
-                this.size = Math.random() * 4 + 2;
-                this.color = color;
-                this.life = 1;
-                this.decay = Math.random() * 0.02 + 0.02;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life -= this.decay;
-                this.vy += 0.2; // gravity
-            }
-
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = this.life;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = this.color;
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.size, this.size);
-                ctx.restore();
-            }
-
-            isDead() {
-                return this.life <= 0;
-            }
-        }
-
-        function spawnEnemy() {
-            gameState.enemies.push(new Enemy());
-        }
-
-        function shootBullet(x) {
-            gameState.bullets.push(new Bullet(x, canvas.height - 20));
-        }
-
-        function createExplosion(x, y, color) {
-            for (let i = 0; i < 15; i++) {
-                gameState.particles.push(new Particle(x, y, color));
-            }
-        }
-
-        function checkCollisions() {
-            for (let i = gameState.bullets.length - 1; i >= 0; i--) {
-                const bullet = gameState.bullets[i];
-                for (let j = gameState.enemies.length - 1; j >= 0; j--) {
-                    const enemy = gameState.enemies[j];
-                    
-                    if (bullet.x > enemy.x && 
-                        bullet.x < enemy.x + enemy.width &&
-                        bullet.y > enemy.y && 
-                        bullet.y < enemy.y + enemy.height) {
-                        
-                        // Hit!
-                        createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.color);
-                        gameState.enemies.splice(j, 1);
-                        gameState.bullets.splice(i, 1);
-                        gameState.score += 10;
-                        document.getElementById('score').textContent = gameState.score;
-                        break;
-                    }
-                }
-            }
-        }
-
-        function updateGame() {
-            if (!gameState.running || gameState.paused) return;
-
-            gameState.frameCount++;
-
-            // Spawn enemies
-            if (gameState.frameCount % gameState.enemySpawnRate === 0) {
-                spawnEnemy();
-                // Increase difficulty
-                if (gameState.enemySpawnRate > 30) {
-                    gameState.enemySpawnRate--;
-                }
-            }
-
-            // Update enemies
-            for (let i = gameState.enemies.length - 1; i >= 0; i--) {
-                gameState.enemies[i].update();
-                
-                if (gameState.enemies[i].isOffScreen()) {
-                    gameState.enemies.splice(i, 1);
-                    gameState.lives--;
-                    document.getElementById('lives').textContent = gameState.lives;
-                    
-                    if (gameState.lives <= 0) {
-                        gameOver();
-                    }
-                }
-            }
-
-            // Update bullets
-            for (let i = gameState.bullets.length - 1; i >= 0; i--) {
-                gameState.bullets[i].update();
-                if (gameState.bullets[i].isOffScreen()) {
-                    gameState.bullets.splice(i, 1);
-                }
-            }
-
-            // Update particles
-            for (let i = gameState.particles.length - 1; i >= 0; i--) {
-                gameState.particles[i].update();
-                if (gameState.particles[i].isDead()) {
-                    gameState.particles.splice(i, 1);
-                }
-            }
-
-            checkCollisions();
-        }
-
-        function drawGame() {
-            // Clear canvas with fade effect
-            ctx.fillStyle = 'rgba(5, 5, 5, 0.3)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw grid background
-            ctx.strokeStyle = 'rgba(0, 255, 204, 0.05)';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < canvas.width; i += 30) {
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, canvas.height);
-                ctx.stroke();
-            }
-            for (let i = 0; i < canvas.height; i += 30) {
-                ctx.beginPath();
-                ctx.moveTo(0, i);
-                ctx.lineTo(canvas.width, i);
-                ctx.stroke();
-            }
-
-            // Draw particles
-            gameState.particles.forEach(particle => particle.draw());
-
-            // Draw enemies
-            gameState.enemies.forEach(enemy => enemy.draw());
-
-            // Draw bullets
-            gameState.bullets.forEach(bullet => bullet.draw());
-
-            // Draw player ship
-            const shipX = canvas.width / 2;
-            const shipY = canvas.height - 30;
-            ctx.save();
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = '#00ffcc';
-            ctx.fillStyle = '#00ffcc';
-            ctx.beginPath();
-            ctx.moveTo(shipX, shipY - 15);
-            ctx.lineTo(shipX - 15, shipY + 15);
-            ctx.lineTo(shipX + 15, shipY + 15);
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
-
-            if (gameState.paused) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#00ffcc';
-                ctx.font = 'bold 40px "JetBrains Mono", monospace';
-                ctx.textAlign = 'center';
-                ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
-            }
-        }
-
-        function gameLoop() {
-            updateGame();
-            drawGame();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function startGame() {
-            if (!gameState.running) {
-                gameState.running = true;
-                gameState.paused = false;
-                gameLoop();
-            } else {
-                gameState.paused = false;
-            }
-        }
-
-        function pauseGame() {
-            gameState.paused = !gameState.paused;
-        }
-
-        function resetGame() {
-            gameState = {
-                running: true,
-                paused: false,
-                score: 0,
-                lives: 3,
-                enemies: [],
-                bullets: [],
-                particles: [],
-                enemySpawnRate: 60,
-                frameCount: 0
-            };
-            document.getElementById('score').textContent = '0';
-            document.getElementById('lives').textContent = '3';
-            
-            // Clear canvas
-            ctx.fillStyle = '#050505';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        function gameOver() {
-            gameState.running = false;
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.fillStyle = '#ff006e';
-            ctx.font = 'bold 50px "JetBrains Mono", monospace';
-            ctx.textAlign = 'center';
-            ctx.shadowBlur = 30;
-            ctx.shadowColor = '#ff006e';
-            ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 30);
-            
-            ctx.fillStyle = '#00ffcc';
-            ctx.font = 'bold 30px "JetBrains Mono", monospace';
-            ctx.shadowColor = '#00ffcc';
-            ctx.fillText('SCORE: ' + gameState.score, canvas.width / 2, canvas.height / 2 + 20);
-            
-            ctx.font = '20px "JetBrains Mono", monospace';
-            ctx.fillStyle = '#8a8a8a';
-            ctx.shadowBlur = 0;
-            ctx.fillText('Click RESET to play again', canvas.width / 2, canvas.height / 2 + 60);
-        }
-
-        // Click to shoot
-        canvas.addEventListener('click', (e) => {
-            if (gameState.running && !gameState.paused) {
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                shootBullet(x);
-            }
-        });
-
-        // Initialize canvas
-        ctx.fillStyle = '#050505';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#00ffcc';
-        ctx.font = 'bold 30px "JetBrains Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('Click START to play!', canvas.width / 2, canvas.height / 2);
-    </script>
-
-    <!-- START: Chatbot widget -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budhaditya Sanyal — Exploring & Optimizing</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-/* Chat widget (scoped) */
-#bs-chat {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  width: 340px;
-  max-height: 520px;
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(180deg, #0b0b0b, #0f0f0f);
-  border: 1px solid rgba(255,255,255,0.04);
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-  overflow: hidden;
-  z-index: 2000;
-  font-family: 'Syne', sans-serif;
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+:root{
+  --bg:#080808;
+  --bg2:#0f0f0f;
+  --bg3:#161616;
+  --line:#1e1e1e;
+  --fg:#f2f0eb;
+  --fg2:#7a7873;
+  --fg3:#3a3835;
+  --teal:#00e5b4;
+  --teal2:#00b890;
+  --pink:#ff2d6b;
+  --glow-t:rgba(0,229,180,.18);
+  --glow-p:rgba(255,45,107,.14);
+  --r:clamp(1rem,2vw,1.5rem);
 }
-#bs-chat.hidden { display: none; }
-#bs-chat .header {
-  padding: 12px 14px;
-  background: rgba(0,0,0,0.4);
-  color: #e7fff6;
-  font-weight: 700;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:8px;
+
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--fg);
+  overflow-x:hidden;
+  line-height:1.6;
+  cursor:none;
 }
-#bs-chat .messages {
-  padding: 12px;
-  overflow-y: auto;
-  flex:1;
-  scrollbar-width: thin;
-  background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+
+/* ── CANVAS PARTICLE BG ── */
+#bg-canvas{
+  position:fixed;inset:0;
+  pointer-events:none;z-index:0;
+  opacity:.45;
 }
-.bs-msg { margin-bottom: 12px; max-width: 86%; line-height:1.4; }
-.bs-msg.user { margin-left: auto; background: linear-gradient(90deg,#00ffcc14,#00ffcc0f); padding:8px 10px; border-radius:10px 10px 6px 10px; color:#dffdf6; }
-.bs-msg.bot  { margin-right: auto; background: rgba(255,255,255,0.02); padding:9px 11px; border-radius:10px 10px 10px 6px; color:#d6fff0; border:1px solid rgba(0,255,204,0.04); }
-#bs-chat .controls { display:flex; gap:8px; padding:10px; border-top:1px solid rgba(255,255,255,0.02); background:rgba(0,0,0,0.35); }
-#bs-chat input { flex:1; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.03); background:transparent; color:var(--text-primary); outline:none; }
-#bs-toggle {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: linear-gradient(135deg,#00ffcc,#ff006e);
-  color: #050505;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow: 0 8px 30px rgba(0,255,204,0.08);
-  z-index: 2001;
-  cursor:pointer;
-  font-weight:700;
-  border: none;
+
+/* ── CUSTOM CURSOR ── */
+#cur,#cur2{
+  position:fixed;border-radius:50%;
+  pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
 }
-#bs-toggle.hidden { display:none; }
-#bs-chat .hint { font-size:0.85rem; color: #9fbfaf; opacity:0.9; margin-bottom:8px; }
-#bs-samples { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
-.bs-sample { font-size:0.8rem; padding:6px 8px; background: rgba(0,255,204,0.06); border-radius:6px; cursor:pointer; color:#bfffe8; border:1px solid rgba(0,255,204,0.03); }
-@media (max-width:640px) {
-  #bs-chat { right:12px; left:12px; width:auto; bottom:90px; }
-  #bs-toggle { right:18px; bottom:18px; }
+#cur{
+  width:10px;height:10px;
+  background:var(--teal);
+  transition:transform .1s,width .2s,height .2s,background .2s;
+}
+#cur2{
+  width:36px;height:36px;
+  border:1.5px solid rgba(0,229,180,.4);
+  transition:transform .06s,width .25s,height .25s,border-color .25s;
+}
+body:has(a:hover) #cur,
+body:has(button:hover) #cur{transform:translate(-50%,-50%) scale(2.5);background:var(--pink)}
+body:has(a:hover) #cur2,
+body:has(button:hover) #cur2{width:56px;height:56px;border-color:rgba(255,45,107,.5)}
+
+/* ── SCROLL BAR ── */
+#prog{
+  position:fixed;top:0;left:0;height:2px;
+  background:linear-gradient(90deg,var(--teal),var(--pink));
+  z-index:8000;transition:width .1s;
+  box-shadow:0 0 8px var(--teal);
+}
+
+/* ── GRAIN ── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:1;opacity:.4;
+  animation:grain 6s steps(8) infinite;
+}
+@keyframes grain{
+  0%,100%{transform:translate(0,0)}10%{transform:translate(-4%,-8%)}
+  20%{transform:translate(-12%,4%)}30%{transform:translate(6%,-20%)}
+  40%{transform:translate(-4%,22%)}50%{transform:translate(-12%,8%)}
+  60%{transform:translate(12%,0)}70%{transform:translate(0,12%)}
+  80%{transform:translate(2%,8%)}90%{transform:translate(-8%,4%)}
+}
+
+/* ── LAYOUT ── */
+.wrap{max-width:1160px;margin:0 auto;padding:0 var(--r);position:relative;z-index:2}
+
+/* ── HEADER ── */
+header{
+  position:sticky;top:0;z-index:500;
+  padding:.9rem 0;
+  background:rgba(8,8,8,.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--line);
+}
+header .wrap{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.logo{
+  font-family:'Unbounded',sans-serif;
+  font-size:1.1rem;font-weight:900;
+  color:var(--teal);letter-spacing:-.02em;
+  white-space:nowrap;
+}
+.nav-links{list-style:none;display:flex;gap:1.8rem;flex-wrap:wrap;justify-content:flex-end}
+.nav-links a{
+  color:var(--fg2);text-decoration:none;
+  font-size:.82rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;
+  transition:color .25s;position:relative;
+}
+.nav-links a::after{
+  content:'';position:absolute;bottom:-4px;left:0;
+  width:0;height:1px;background:var(--teal);
+  transition:width .3s;
+}
+.nav-links a:hover{color:var(--fg)}
+.nav-links a:hover::after{width:100%}
+
+/* ── HERO ── */
+.hero{
+  min-height:100svh;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:7rem 0 4rem;
+  position:relative;overflow:hidden;
+}
+.hero-eyebrow{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.72rem;color:var(--teal);
+  letter-spacing:.25em;text-transform:uppercase;
+  margin-bottom:1.6rem;
+  display:flex;align-items:center;gap:.8rem;
+  opacity:0;animation:fadeUp .7s .1s ease forwards;
+}
+.hero-eyebrow::before{content:'';width:32px;height:1px;background:var(--teal)}
+
+.hero-title{
+  font-family:'Unbounded',sans-serif;
+  font-size:clamp(2.4rem,7.5vw,7rem);
+  font-weight:900;line-height:1.0;
+  letter-spacing:-.04em;
+  margin-bottom:2rem;
+  opacity:0;animation:fadeUp .8s .25s ease forwards;
+}
+.hero-title .line{display:block;overflow:hidden}
+.hero-title em{
+  font-style:normal;
+  background:linear-gradient(135deg,var(--teal) 0%,var(--pink) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+.hero-sub{
+  font-size:clamp(.95rem,1.8vw,1.2rem);
+  color:var(--fg2);max-width:560px;line-height:1.75;
+  margin-bottom:3rem;
+  opacity:0;animation:fadeUp .8s .4s ease forwards;
+}
+
+.cta-row{
+  display:flex;gap:1rem;flex-wrap:wrap;
+  opacity:0;animation:fadeUp .8s .55s ease forwards;
+}
+.btn{
+  padding:.85rem 2rem;border-radius:4px;
+  font-weight:600;font-size:.9rem;letter-spacing:.02em;
+  text-decoration:none;display:inline-flex;align-items:center;gap:.5rem;
+  transition:all .25s;position:relative;overflow:hidden;cursor:none;border:none;
+}
+.btn-primary{
+  background:var(--teal);color:#080808;
+}
+.btn-primary:hover{
+  background:var(--teal2);
+  box-shadow:0 0 32px var(--glow-t);
+  transform:translateY(-2px);
+}
+.btn-ghost{
+  background:transparent;color:var(--fg);
+  border:1px solid var(--line);
+}
+.btn-ghost:hover{
+  border-color:var(--teal);color:var(--teal);
+  transform:translateY(-2px);
+}
+
+/* scroll indicator */
+.scroll-hint{
+  position:absolute;bottom:2.5rem;left:var(--r);
+  font-family:'JetBrains Mono',monospace;
+  font-size:.68rem;color:var(--fg3);letter-spacing:.15em;
+  display:flex;align-items:center;gap:.6rem;
+  animation:fadeUp .8s .9s ease forwards;opacity:0;
+}
+.scroll-hint::after{
+  content:'';width:1px;height:40px;background:linear-gradient(var(--teal),transparent);
+}
+
+/* hero big number bg */
+.hero-bg-num{
+  position:absolute;right:-2%;top:50%;
+  transform:translateY(-50%);
+  font-family:'Unbounded',sans-serif;
+  font-size:clamp(10rem,22vw,22rem);
+  font-weight:900;color:transparent;
+  -webkit-text-stroke:1px rgba(255,255,255,.03);
+  pointer-events:none;line-height:1;
+  user-select:none;
+}
+
+/* ── STATS MARQUEE BAND ── */
+.marquee-band{
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  overflow:hidden;padding:.9rem 0;
+  background:var(--bg2);position:relative;z-index:2;
+}
+.marquee-track{
+  display:flex;gap:3rem;width:max-content;
+  animation:marquee 22s linear infinite;
+}
+.marquee-band:hover .marquee-track{animation-play-state:paused}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.marquee-item{
+  display:flex;align-items:center;gap:.8rem;
+  white-space:nowrap;padding:0 1rem;
+}
+.marquee-num{
+  font-family:'Unbounded',sans-serif;
+  font-size:1.1rem;font-weight:700;color:var(--teal);
+}
+.marquee-label{
+  font-size:.8rem;color:var(--fg2);letter-spacing:.04em;
+}
+.marquee-dot{color:var(--fg3);font-size:1.2rem}
+
+/* ── SECTION SHARED ── */
+.section{padding:6rem 0;position:relative;z-index:2}
+.section-tag{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.68rem;color:var(--teal);
+  letter-spacing:.22em;text-transform:uppercase;
+  margin-bottom:.8rem;
+  display:flex;align-items:center;gap:.7rem;
+}
+.section-tag::before{content:'';width:24px;height:1px;background:var(--teal)}
+.section-h{
+  font-family:'Unbounded',sans-serif;
+  font-size:clamp(1.9rem,4vw,3.4rem);
+  font-weight:900;letter-spacing:-.03em;
+  line-height:1.1;margin-bottom:3rem;
+}
+
+/* ── ABOUT SECTION ── */
+.about-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4rem;align-items:start;
+}
+.about-body{font-size:1.05rem;color:var(--fg2);line-height:1.85}
+.about-body p+p{margin-top:1.2rem}
+.about-body strong{color:var(--fg);font-weight:500}
+
+.passion-box{
+  background:var(--bg2);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:2.2rem;
+  position:relative;overflow:hidden;
+}
+.passion-box::before{
+  content:'';position:absolute;
+  top:-40px;right:-40px;width:180px;height:180px;
+  background:radial-gradient(circle,var(--glow-t),transparent 70%);
+  pointer-events:none;
+}
+.passion-box h3{
+  font-family:'Unbounded',sans-serif;
+  font-size:1.05rem;font-weight:700;
+  margin-bottom:1.2rem;color:var(--fg);
+  letter-spacing:-.02em;
+}
+.passion-box p{font-size:.95rem;color:var(--fg2);line-height:1.8}
+.passion-box strong{color:var(--teal);font-weight:500}
+
+/* ── EXPERIENCE ── */
+.exp-list{display:flex;flex-direction:column;gap:.6rem}
+.exp-card{
+  background:var(--bg2);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:1.8rem 2rem;
+  transition:border-color .3s,transform .3s,box-shadow .3s;
+  position:relative;overflow:hidden;
+  cursor:default;
+}
+.exp-card::before{
+  content:'';position:absolute;
+  top:0;left:0;width:3px;height:100%;
+  background:linear-gradient(var(--teal),var(--pink));
+  transform:scaleY(0);transform-origin:top;
+  transition:transform .35s ease;
+}
+.exp-card:hover{
+  border-color:rgba(0,229,180,.25);
+  transform:translateX(6px);
+  box-shadow:-6px 0 30px rgba(0,229,180,.06);
+}
+.exp-card:hover::before{transform:scaleY(1)}
+.exp-top{
+  display:flex;justify-content:space-between;
+  align-items:flex-start;gap:1rem;flex-wrap:wrap;
+  margin-bottom:.9rem;
+}
+.exp-role{
+  font-family:'Unbounded',sans-serif;
+  font-size:1rem;font-weight:700;
+  letter-spacing:-.02em;margin-bottom:.3rem;
+}
+.exp-co{color:var(--teal);font-size:.9rem;font-weight:500}
+.exp-loc{color:var(--fg3);font-size:.82rem;margin-top:.15rem}
+.exp-date{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.75rem;color:var(--fg3);
+  white-space:nowrap;padding:.3rem .8rem;
+  border:1px solid var(--line);border-radius:20px;
+}
+.exp-list-items{list-style:none;margin-top:.4rem}
+.exp-list-items li{
+  padding-left:1.4rem;margin-bottom:.4rem;
+  color:var(--fg2);font-size:.9rem;line-height:1.6;
+  position:relative;
+}
+.exp-list-items li::before{
+  content:'▸';position:absolute;left:0;
+  color:var(--teal);font-size:.75rem;top:.15em;
+}
+
+/* ── SKILLS ── */
+.skills-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:1rem;
+}
+.skill-box{
+  background:var(--bg2);border:1px solid var(--line);
+  border-radius:10px;padding:1.6rem;
+  transition:border-color .3s,transform .3s;
+}
+.skill-box:hover{
+  border-color:rgba(0,229,180,.3);
+  transform:translateY(-4px);
+}
+.skill-box h3{
+  font-family:'Unbounded',sans-serif;
+  font-size:.78rem;font-weight:700;
+  color:var(--teal);letter-spacing:.06em;text-transform:uppercase;
+  margin-bottom:1rem;
+}
+.tags{display:flex;flex-wrap:wrap;gap:.45rem}
+.tag{
+  font-size:.78rem;color:var(--fg2);
+  padding:.35rem .85rem;
+  background:var(--bg3);
+  border:1px solid var(--line);
+  border-radius:20px;
+  transition:all .2s;
+}
+.tag:hover{
+  border-color:var(--teal);color:var(--teal);
+  background:rgba(0,229,180,.06);
+}
+
+/* ── GAME ── */
+.game-wrap{
+  background:var(--bg2);border:1px solid var(--line);
+  border-radius:14px;padding:2.5rem;
+  text-align:center;
+  position:relative;overflow:hidden;
+}
+.game-wrap::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(0,229,180,.05),transparent 60%);
+  pointer-events:none;
+}
+.game-kicker{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.68rem;color:var(--pink);
+  letter-spacing:.2em;text-transform:uppercase;
+  margin-bottom:.6rem;
+}
+.game-title-text{
+  font-family:'Unbounded',sans-serif;
+  font-size:clamp(1.4rem,3vw,2.2rem);
+  font-weight:900;letter-spacing:-.03em;
+  color:var(--fg);margin-bottom:.5rem;
+}
+.game-sub{color:var(--fg2);font-size:.88rem;margin-bottom:1.6rem}
+#gameCanvas{
+  border:1px solid var(--line);border-radius:8px;
+  background:#050510;
+  max-width:100%;height:auto;display:block;margin:0 auto;
+  box-shadow:0 0 40px rgba(0,229,180,.08);
+  cursor:crosshair;
+}
+.game-hud{
+  display:flex;justify-content:center;gap:3rem;
+  margin:1.2rem 0 .8rem;
+  font-family:'JetBrains Mono',monospace;font-size:.9rem;
+}
+.game-hud span{color:var(--fg2)}
+.game-hud span b{color:var(--teal)}
+.game-note{font-size:.8rem;color:var(--fg3);margin-bottom:1.2rem}
+.game-btns{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap}
+.gbtn{
+  font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:700;
+  padding:.6rem 1.4rem;border-radius:4px;
+  border:1px solid var(--line);background:var(--bg3);color:var(--fg);
+  cursor:none;transition:all .2s;letter-spacing:.06em;
+}
+.gbtn:hover{border-color:var(--teal);color:var(--teal);box-shadow:0 0 16px var(--glow-t)}
+.gbtn.active{background:var(--teal);color:#080808;border-color:var(--teal)}
+
+/* ── CONTACT ── */
+.contact-hero{
+  text-align:center;
+  padding:3rem 0 4rem;
+}
+.contact-big{
+  font-family:'Unbounded',sans-serif;
+  font-size:clamp(2rem,6vw,5rem);
+  font-weight:900;letter-spacing:-.04em;
+  line-height:1.05;margin-bottom:1.5rem;
+}
+.contact-big em{
+  font-style:normal;
+  background:linear-gradient(135deg,var(--teal),var(--pink));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.contact-sub{
+  color:var(--fg2);font-size:1rem;max-width:440px;
+  margin:0 auto 2.5rem;line-height:1.7;
+}
+.contact-links{
+  display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;
+}
+.clink{
+  display:inline-flex;align-items:center;gap:.6rem;
+  padding:.8rem 1.8rem;border-radius:6px;
+  font-size:.88rem;font-weight:500;text-decoration:none;
+  border:1px solid var(--line);color:var(--fg2);
+  transition:all .25s;
+}
+.clink:hover{border-color:var(--teal);color:var(--teal);transform:translateY(-2px)}
+.clink-email{
+  background:var(--teal);color:#080808;border-color:var(--teal);font-weight:600;
+}
+.clink-email:hover{background:var(--teal2);color:#080808;box-shadow:0 0 30px var(--glow-t)}
+.clink-icon{font-size:1rem}
+
+/* ── FOOTER ── */
+footer{
+  border-top:1px solid var(--line);padding:2rem 0;
+  text-align:center;color:var(--fg3);font-size:.8rem;
+  position:relative;z-index:2;
+}
+footer span{color:var(--teal)}
+
+/* ── CHATBOT ── */
+#bs-chat{
+  position:fixed;right:20px;bottom:20px;
+  width:min(360px,calc(100vw - 28px));
+  max-height:72vh;
+  display:flex;flex-direction:column;
+  background:var(--bg2);
+  border:1px solid rgba(0,229,180,.2);
+  border-radius:14px;
+  box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 0 1px rgba(0,229,180,.05);
+  overflow:hidden;z-index:2000;
+  font-family:'DM Sans',sans-serif;
+}
+#bs-chat.hidden{display:none}
+#bs-chat .header{
+  padding:14px 16px;
+  background:rgba(0,229,180,.06);
+  border-bottom:1px solid var(--line);
+  color:var(--fg);font-weight:600;font-size:.9rem;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.chat-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--teal);display:inline-block;margin-right:6px;
+  animation:blink 2s ease infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+#bs-chat .messages{
+  padding:14px;overflow-y:auto;flex:1;
+  scrollbar-width:thin;scrollbar-color:var(--line) transparent;
+}
+.bs-msg{margin-bottom:10px;max-width:88%;font-size:.88rem;line-height:1.5;
+  padding:9px 12px;border-radius:10px;animation:msgpop .2s ease}
+@keyframes msgpop{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+.bs-msg.user{
+  margin-left:auto;
+  background:rgba(0,229,180,.12);
+  border:1px solid rgba(0,229,180,.15);
+  color:var(--fg);border-radius:10px 10px 2px 10px;
+}
+.bs-msg.bot{
+  margin-right:auto;
+  background:var(--bg3);
+  border:1px solid var(--line);
+  color:var(--fg2);border-radius:10px 10px 10px 2px;
+}
+.hint{font-size:.8rem;color:var(--fg3);margin-bottom:7px}
+#bs-samples{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.bs-sample{
+  font-size:.76rem;padding:4px 10px;
+  background:rgba(0,229,180,.07);
+  border:1px solid rgba(0,229,180,.15);
+  border-radius:20px;cursor:pointer;color:var(--teal);
+  transition:all .15s;
+}
+.bs-sample:hover{background:rgba(0,229,180,.15)}
+#bs-chat .controls{
+  display:flex;gap:8px;padding:10px 12px;
+  border-top:1px solid var(--line);
+  background:var(--bg3);
+}
+#bs-chat input{
+  flex:1;padding:9px 12px;border-radius:7px;
+  border:1px solid var(--line);background:var(--bg2);
+  color:var(--fg);font-family:'DM Sans',sans-serif;font-size:.88rem;
+  outline:none;transition:border-color .2s;
+}
+#bs-chat input:focus{border-color:var(--teal)}
+#bs-send{
+  background:var(--teal);border:none;padding:9px 14px;
+  border-radius:7px;cursor:pointer;color:#080808;
+  font-weight:700;font-size:.82rem;transition:all .2s;
+}
+#bs-send:hover{background:var(--teal2)}
+#bs-toggle{
+  position:fixed;right:20px;bottom:20px;
+  width:54px;height:54px;border-radius:50%;
+  background:linear-gradient(135deg,var(--teal),var(--pink));
+  color:#080808;border:none;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 24px rgba(0,229,180,.25);
+  z-index:2001;cursor:pointer;font-weight:800;font-size:.88rem;
+  font-family:'Unbounded',sans-serif;transition:all .2s;
+}
+#bs-toggle:hover{transform:scale(1.08);box-shadow:0 6px 32px rgba(0,229,180,.4)}
+#bs-toggle.hidden{display:none}
+
+/* ── REVEAL ANIMATIONS ── */
+.reveal{
+  opacity:0;transform:translateY(32px);
+  transition:opacity .7s ease,transform .7s ease;
+}
+.reveal.in{opacity:1;transform:translateY(0)}
+.reveal-d1{transition-delay:.1s}
+.reveal-d2{transition-delay:.2s}
+.reveal-d3{transition-delay:.3s}
+.reveal-d4{transition-delay:.4s}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(24px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:var(--line);margin:0}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  :root{--r:1.1rem}
+  .nav-links{gap:.9rem}
+  .nav-links a{font-size:.72rem}
+  .hero{padding:5rem 0 3rem;min-height:100svh}
+  .hero-title{font-size:clamp(2rem,9vw,3.5rem)}
+  .about-grid{grid-template-columns:1fr;gap:2rem}
+  .exp-card{padding:1.3rem}
+  .exp-top{flex-direction:column;gap:.4rem}
+  .section{padding:4rem 0}
+  .section-h{font-size:clamp(1.6rem,5vw,2.4rem)}
+  .contact-big{font-size:clamp(1.8rem,7vw,3rem)}
+  .game-wrap{padding:1.4rem 1rem}
+  .hero-bg-num{display:none}
+  #cur,#cur2{display:none}
+}
+@media(max-width:480px){
+  .nav-links{gap:.6rem}
+  .nav-links a{font-size:.68rem;letter-spacing:.03em}
+  .game-hud{gap:1.5rem}
+  .cta-row{flex-direction:column}
+  .btn{width:100%;justify-content:center}
 }
 </style>
+</head>
+<body>
 
-<div id="bs-chat" class="hidden" aria-live="polite" aria-label="Chat about Budhaditya">
+<canvas id="bg-canvas"></canvas>
+<div id="cur"></div>
+<div id="cur2"></div>
+<div id="prog"></div>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="wrap">
+    <div class="logo">BS.</div>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#experience">Experience</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#game">Game</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </div>
+</header>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-eyebrow">Exploring &amp; Optimizing</div>
+    <h1 class="hero-title">
+      <span class="line">Hey, I'm</span>
+      <span class="line"><em>Budhaditya.</em></span>
+      <span class="line">I build things</span>
+      <span class="line">that matter.</span>
+    </h1>
+    <p class="hero-sub">Third-year student with real-world runs in B2B sales, game development, and startup growth. Currently figuring out how to make the biggest dent possible.</p>
+    <div class="cta-row">
+      <a href="#contact" class="btn btn-primary">Get in touch ↗</a>
+      <a href="#experience" class="btn btn-ghost">View my work</a>
+    </div>
+    <div class="scroll-hint">scroll</div>
+  </div>
+  <div class="hero-bg-num" aria-hidden="true">BS</div>
+</section>
+
+<!-- ══ MARQUEE STATS ══ -->
+<div class="marquee-band" aria-label="Key stats">
+  <div class="marquee-track">
+    <!-- first set -->
+    <div class="marquee-item"><span class="marquee-num">$10K+</span><span class="marquee-label">Revenue, First Week</span></div>
+    <div class="marquee-item"><span class="marquee-dot">·</span></div>
+    <div class="marquee-item"><span class="marquee-num">₹1.2Cr</span><span class="marquee-label">Seed Funding Raised</span></div>
+    <div class="marquee-item"><span class="marquee-dot">·</span></div>
+    <div class="marquee-item"><span class="marquee-num">4+</span><span class="marquee-label">Games Shipped</span></div>
+    <div class="marquee-item"><span class="marquee-dot">·</span></div>
+    <div class="marquee-item"><span class="marquee-num">₹3L+</span><span class="marquee-label">Sponsorships</span></div>
+    <div class="marquee-item"><span class="marquee-dot">·</span></div>
+    <div class="marquee-item"><span class="marquee-num">3rd Year</span><span class="marquee-label">Christ University, Blr</span></div>
+    <div class="marquee-item"><span class="marquee-dot">·</span></div>
+    <!-- duplicate for seamless loop -->
+    <div class="marquee-item"><span class="marquee-num">$10K+</span><span class="marquee-label">Revenue, First Week</span></div>
+    <div class="marquee-item"><span class="marquee-dot">·</span></div>
+    <div class="marquee-item"><span class="marquee-num">₹1.2Cr</span><span class="marquee-label">Seed Funding Raised</span></div>
+    <div class="marquee-item"><span class="marquee-dot">·</span></div>
+    <div class="marquee-item"><span class="marquee-num">4+</span><span class="marquee-label">Games Shipped</span></div>
+    <div class="marquee-item"><span class="marquee-dot">·</span></div>
+    <div class="marquee-item"><span class="marquee-num">₹3L+</span><span class="marquee-label">Sponsorships</span></div>
+    <div class="marquee-item"><span class="marquee-dot">·</span></div>
+    <div class="marquee-item"><span class="marquee-num">3rd Year</span><span class="marquee-label">Christ University, Blr</span></div>
+    <div class="marquee-item"><span class="marquee-dot">·</span></div>
+  </div>
+</div>
+
+<!-- ══ ABOUT ══ -->
+<section class="section" id="about">
+  <div class="wrap">
+    <div class="section-tag">About</div>
+    <div class="about-grid">
+      <div>
+        <h2 class="section-h">Who I am<br><em style="background:linear-gradient(135deg,var(--teal),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-style:normal">actually.</em></h2>
+        <div class="about-body reveal">
+          <p>I started making things I wanted to use for myself. Some didn't work out. Some did. One game surprised me — huge player engagement, serious first-week revenue. Another gig had me in the room helping raise seed funding. Not bad for a 20-year-old.</p>
+          <p>I'm currently a 3rd year student at <strong>Christ University, Bangalore</strong> while exploring <strong>LLMs</strong>, in-game AI, computational linguistics, and figuring out exactly how I want to shape my career. Still optimising. Always will be.</p>
+          <p>Also — I built a chatbot into this site. Try it out.</p>
+        </div>
+      </div>
+      <div class="passion-box reveal reveal-d2">
+        <h3>What drives me</h3>
+        <p>I'm fascinated by the intersection of <strong>human connection</strong>, <strong>intelligent systems</strong>, and <strong>interactive experiences</strong>. Sales is about understanding people. LLMs are about augmenting people. Games are about delighting people.</p>
+        <br>
+        <p>Whether pitching investors, training a language model, or designing a game mechanic — the core is the same: <strong>create something that actually resonates</strong>. That's what gets me up to build.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ EXPERIENCE ══ -->
+<section class="section" id="experience">
+  <div class="wrap">
+    <div class="section-tag">Experience</div>
+    <h2 class="section-h">What I've done.</h2>
+    <div class="exp-list">
+
+      <div class="exp-card reveal">
+        <div class="exp-top">
+          <div>
+            <div class="exp-role">GTM &amp; Partnerships</div>
+            <div class="exp-co">EarlyJobs</div>
+            <div class="exp-loc">Bangalore, India</div>
+          </div>
+          <div class="exp-date">Mar 2025 – Jun 2025</div>
+        </div>
+        <ul class="exp-list-items">
+          <li>Part of the investor relations team that raised ₹1.2 Cr in seed funding</li>
+          <li>Onboarded JustDial, Quess Corps, RBL Bank, YES Bank as clients</li>
+          <li>Managed strategic partnerships and ran B2B inside sales</li>
+          <li>Drove platform visibility and user engagement strategies</li>
+        </ul>
+      </div>
+
+      <div class="exp-card reveal reveal-d1">
+        <div class="exp-top">
+          <div>
+            <div class="exp-role">Team Lead / B2B Sales</div>
+            <div class="exp-co">SurgeHouse</div>
+            <div class="exp-loc">Bengaluru, India</div>
+          </div>
+          <div class="exp-date">Oct 2023 – Oct 2024</div>
+        </div>
+        <ul class="exp-list-items">
+          <li>Market analysis to identify high-value growth opportunities</li>
+          <li>Optimised lead generation with data-driven prospecting</li>
+          <li>Pitched company to Angel Investors directly</li>
+          <li>Led business growth across multiple verticals</li>
+        </ul>
+      </div>
+
+      <div class="exp-card reveal reveal-d2">
+        <div class="exp-top">
+          <div>
+            <div class="exp-role">Game Developer &amp; Marketing Head</div>
+            <div class="exp-co">Multiple Game Studios (Roblox)</div>
+            <div class="exp-loc">San Francisco, CA</div>
+          </div>
+          <div class="exp-date">Feb 2020 – Jan 2024</div>
+        </div>
+        <ul class="exp-list-items">
+          <li>Designed for Attack on Titan, Snowpiercer, One Piece universes — weapons, 3D clothing, environments</li>
+          <li>Generated $10K+ revenue in the first week of one game launch</li>
+          <li>Led projects that hit top player engagement in Q1</li>
+          <li>Collaborated with angel investors and rights holders</li>
+          <li>3D assets contributing to millions of platform visits</li>
+        </ul>
+      </div>
+
+      <div class="exp-card reveal reveal-d3">
+        <div class="exp-top">
+          <div>
+            <div class="exp-role">Sales &amp; Business Development</div>
+            <div class="exp-co">Cook &amp; Klean</div>
+            <div class="exp-loc">Bangalore, India</div>
+          </div>
+          <div class="exp-date">Feb 2025 – Mar 2025</div>
+        </div>
+        <ul class="exp-list-items">
+          <li>Led lead generation and customer outreach</li>
+          <li>Worked with marketing on conversion optimisation</li>
+          <li>Analysed sales data to sharpen engagement strategy</li>
+        </ul>
+      </div>
+
+      <div class="exp-card reveal reveal-d4">
+        <div class="exp-top">
+          <div>
+            <div class="exp-role">Special Ed Intern</div>
+            <div class="exp-co">Cohesive Minds for Mental Health Foundation</div>
+            <div class="exp-loc">Surat, India</div>
+          </div>
+          <div class="exp-date">May 2024 – Jul 2024</div>
+        </div>
+        <ul class="exp-list-items">
+          <li>Designed 6-month curriculum for kids with learning disabilities &amp; ADHD</li>
+          <li>Organised seminars with psychologists and webinars</li>
+          <li>Secured ₹90K title sponsorship for flagship event</li>
+          <li>Contributed to NGO formation and development</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SKILLS ══ -->
+<section class="section" id="skills">
+  <div class="wrap">
+    <div class="section-tag">Capabilities</div>
+    <h2 class="section-h">What I work with.</h2>
+    <div class="skills-grid">
+      <div class="skill-box reveal">
+        <h3>Business &amp; Sales</h3>
+        <div class="tags">
+          <span class="tag">B2B Sales</span><span class="tag">Lead Generation</span>
+          <span class="tag">Prospecting</span><span class="tag">Cold Calling</span>
+          <span class="tag">CRM</span><span class="tag">Partnerships</span>
+        </div>
+      </div>
+      <div class="skill-box reveal reveal-d1">
+        <h3>Product &amp; Marketing</h3>
+        <div class="tags">
+          <span class="tag">GTM Strategy</span><span class="tag">Market Research</span>
+          <span class="tag">Customer Acquisition</span><span class="tag">Storytelling</span>
+          <span class="tag">Event Planning</span>
+        </div>
+      </div>
+      <div class="skill-box reveal reveal-d2">
+        <h3>Technical</h3>
+        <div class="tags">
+          <span class="tag">3D Modeling</span><span class="tag">Game Dev</span>
+          <span class="tag">Fullstack Dev</span><span class="tag">LLMs</span>
+          <span class="tag">Data Analysis</span>
+        </div>
+      </div>
+      <div class="skill-box reveal reveal-d3">
+        <h3>Leadership</h3>
+        <div class="tags">
+          <span class="tag">Team Leadership</span><span class="tag">Communication</span>
+          <span class="tag">Public Speaking</span><span class="tag">Problem Solving</span>
+          <span class="tag">Project Management</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ GAME ══ -->
+<section class="section" id="game">
+  <div class="wrap">
+    <div class="section-tag">THE CREATION</div>
+    <h2 class="section-h">I made a game.<br>Obviously.</h2>
+    <div class="game-wrap reveal">
+      <div class="game-kicker">Playable demo · built by me</div>
+      <div class="game-title-text">DEFEND THE THRONE</div>
+      <div class="game-sub">Click anywhere on the canvas to fire. Don't let enemies through.</div>
+      <canvas id="gameCanvas" width="600" height="380"></canvas>
+      <div class="game-hud">
+        <span>SCORE <b id="score">0</b></span>
+        <span>LIVES <b id="lives">3</b></span>
+      </div>
+      <div class="game-note">Click the canvas to shoot · enemies speed up over time</div>
+      <div class="game-btns">
+        <button class="gbtn active" onclick="startGame()">START</button>
+        <button class="gbtn" onclick="pauseGame()">PAUSE</button>
+        <button class="gbtn" onclick="resetGame()">RESET</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ CONTACT ══ -->
+<section class="section" id="contact">
+  <div class="wrap">
+    <div class="contact-hero reveal">
+      <div class="section-tag" style="justify-content:center">Let's connect</div>
+      <h2 class="contact-big">Got something<br><em>interesting?</em></h2>
+      <p class="contact-sub">Open to opportunities in product, growth, and business development. If you're building something worth talking about - let's talk.</p>
+      <div class="contact-links">
+        <button class="btn clink clink-email" id="emailBtn" onclick="revealEmail()" style="cursor:pointer;font-family:'DM Sans',sans-serif">
+          <span class="clink-icon">✉</span> Click to reveal email
+        </button>
+        <a href="https://www.linkedin.com/in/budhaditya-sanyal-52ba1a244/" target="_blank" rel="noopener" class="clink">
+          <span class="clink-icon">in</span> LinkedIn
+        </a>
+        <a href="tel:+919265838747" class="clink">
+          <span class="clink-icon">↗</span> Phone
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div class="wrap">
+    <p>© 2025 <span>Budhaditya Sanyal</span> · Built from scratch · Always optimising.</p>
+  </div>
+</footer>
+
+<!-- ══ CHATBOT ══ -->
+<div id="bs-chat" class="hidden">
   <div class="header">
-    <div>Ask about Budhaditya</div>
-    <button id="bs-close" aria-label="Close chat" style="background:transparent;border:none;color:#dffdf6;cursor:pointer">✕</button>
+    <div><span class="chat-dot"></span>Ask about Budhaditya</div>
+    <button id="bs-close" style="background:transparent;border:none;color:var(--fg2);cursor:pointer;font-size:1.1rem;line-height:1">✕</button>
   </div>
   <div class="messages" id="bs-messages">
-    <div class="bs-msg bot">Hi — I can answer things about Budhaditya. Try: <div class="hint">"Who are you?", "Where do you study?", "What have you built?"</div>
-      <div id="bs-samples" class="bs-samples">
+    <div class="bs-msg bot">
+      Hey! I can answer things about Budhaditya.
+      <div class="hint">Try: "Who are you?", "What have you built?", "Where do you study?"</div>
+      <div id="bs-samples">
         <div class="bs-sample">Who are you?</div>
         <div class="bs-sample">Where do you study?</div>
         <div class="bs-sample">What can you do?</div>
       </div>
     </div>
-        <!-- Optional: add more Q&A here as JSON (edit this block in HTML to add questions) -->
-        <script type="application/json" id="bs-kb">
-            [
-                { "sample": "What jobs have you done?", "patterns": ["jobs","experience","what have you done"], "reply": "I have experience in B2B sales, game development, GTM, and product growth. See the Experience section for details." },
-                { "sample": "How can I contact you?", "patterns": ["contact","email","reach out"], "reply": "You can reveal my email in the Contact section or message me on LinkedIn (link in footer)." },
-                { "sample": "Tell me about your games", "patterns": ["games","revenue","launched"], "reply": "I've shipped multiple games and generated notable launch revenue — check the Game & Experience sections for more." }
-            ]
-        </script>
+    <script type="application/json" id="bs-kb">
+      [
+        {"sample":"What jobs have you done?","patterns":["jobs","experience","what have you done"],"reply":"B2B sales, game development, GTM, and product growth. See the Experience section for the full breakdown."},
+        {"sample":"How can I contact you?","patterns":["contact","email","reach out"],"reply":"Reveal the email in the Contact section, or hit him up on LinkedIn — link's at the bottom."},
+        {"sample":"Tell me about your games","patterns":["games","revenue","launched","roblox"],"reply":"Multiple games shipped on Roblox — $10K+ revenue in the first week of one launch. Games for One Piece, AoT, Snowpiercer universes. Millions of visits."}
+      ]
+    </script>
   </div>
-
   <div class="controls">
-    <input id="bs-input" placeholder="Ask something about Budhaditya..." aria-label="Message input" />
-    <button id="bs-send" aria-label="Send" style="background:var(--accent);border:none;padding:8px 12px;border-radius:8px;cursor:pointer;color:#050505">Send</button>
+    <input id="bs-input" placeholder="Ask something…" />
+    <button id="bs-send">Send</button>
   </div>
 </div>
-
 <button id="bs-toggle">BS</button>
 
 <script>
-(function(){
-    let kb = [
-        { patterns: [/who (are )?you/i, /tell me about you/i, /\bwho\b.*budhaditya/i], reply: "I'm Budhaditya Sanyal — a third-year BA English Honours student at Christ University, Bengaluru. I build products, ship games, and work on growth & GTM." },
-        { patterns: [/where (do )?you study/i, /college|university/i], reply: "I study at Christ University, Bengaluru." },
-        { patterns: [/what (do )?you like/i, /interests|passion/i], reply: "I like human connection, intelligent systems (LLMs), and interactive experiences such as game development." },
-        { patterns: [/what (can|do) you do/i, /capabilit/i], reply: "I work on product, B2B sales, GTM, full-stack dev, game development, and exploring LLMs." },
-        { patterns: [/what (have )?you (done|built)/i, /projects|experience/i], reply: "I've generated $10K+ in game revenue in the first week, shipped multiple games, and helped raise seed funding (₹1.2Cr). Check the Experience section for details." },
-        { patterns: [/contact|email|phone/i], reply: "You can reveal the email on the Contact section of this page or reach out via LinkedIn (link in footer)." },
-        { patterns: [/portfolio|website|cv/i], reply: "This portfolio is the best place to explore my work — use the nav or ask me about specific projects." }
-    ];
+/* ── CURSOR ── */
+const c1=document.getElementById('cur'),c2=document.getElementById('cur2');
+document.addEventListener('mousemove',e=>{
+  c1.style.left=e.clientX+'px';c1.style.top=e.clientY+'px';
+  c2.style.left=e.clientX+'px';c2.style.top=e.clientY+'px';
+});
 
-    // Merge optional KB entries defined in HTML (edit the JSON inside <script id="bs-kb">)
-    function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-    try{
-        const extraScript = document.getElementById('bs-kb');
-        if(extraScript){
-            const parsed = JSON.parse(extraScript.textContent || '[]');
-            if(Array.isArray(parsed)){
-                parsed.forEach(entry => {
-                    const patterns = [];
-                    if(Array.isArray(entry.patterns)){
-                        entry.patterns.forEach(p => {
-                            if(typeof p === 'string'){
-                                // create word-boundary regex for simple keywords/phrases
-                                patterns.push(new RegExp('\\b' + escapeRegex(p) + '\\b', 'i'));
-                            }
-                        });
-                    }
-                    if(patterns.length && entry.reply){
-                        kb.push({ patterns, reply: entry.reply });
-                    }
-                    // create sample buttons if sample provided
-                    if(entry.sample){
-                        try{ const samplesEl = document.getElementById('bs-samples'); if(samplesEl){
-                                const btn = document.createElement('div'); btn.className = 'bs-sample'; btn.textContent = entry.sample; samplesEl.appendChild(btn);
-                        }}catch(e){}
-                    }
-                });
-            }
-        }
-    }catch(e){ console.warn('Failed to parse bs-kb JSON', e); }
+/* ── SCROLL PROGRESS ── */
+const prog=document.getElementById('prog');
+window.addEventListener('scroll',()=>{
+  const p=window.scrollY/(document.documentElement.scrollHeight-window.innerHeight)*100;
+  prog.style.width=p+'%';
+},{passive:true});
 
-  const chat = document.getElementById('bs-chat');
-  const toggle = document.getElementById('bs-toggle');
-  const closeBtn = document.getElementById('bs-close');
-  const messages = document.getElementById('bs-messages');
-  const input = document.getElementById('bs-input');
-  const send = document.getElementById('bs-send');
-
-  function append(role, text){
-    const el = document.createElement('div');
-    el.className = 'bs-msg ' + (role === 'user' ? 'user' : 'bot');
-    el.textContent = text;
-    messages.appendChild(el);
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  function answer(question){
-    const q = question.trim();
-    if(!q) return;
-    // simple exact-ish matcher
-    for(const item of kb){
-      for(const rx of item.patterns){
-        if(rx.test(q)){
-          return item.reply;
-        }
+/* ── PARTICLE CANVAS ── */
+const cnv=document.getElementById('bg-canvas');
+const cx=cnv.getContext('2d');
+let W,H,pts=[];
+function resize(){W=cnv.width=window.innerWidth;H=cnv.height=window.innerHeight}
+resize();window.addEventListener('resize',()=>{resize();initPts()},{passive:true});
+function initPts(){
+  pts=[];
+  const n=Math.floor(W*H/14000);
+  for(let i=0;i<n;i++) pts.push({
+    x:Math.random()*W,y:Math.random()*H,
+    vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,
+    r:Math.random()*1.2+.3,
+    a:Math.random()
+  });
+}
+initPts();
+let mx=W/2,my=H/2;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY},{passive:true});
+function drawPts(){
+  cx.clearRect(0,0,W,H);
+  pts.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0||p.x>W)p.vx*=-1;
+    if(p.y<0||p.y>H)p.vy*=-1;
+    const dx=p.x-mx,dy=p.y-my,dist=Math.sqrt(dx*dx+dy*dy);
+    const glow=Math.max(0,1-dist/320);
+    cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    cx.fillStyle=`rgba(0,229,180,${p.a*.5+glow*.6})`;cx.fill();
+    if(glow>.15){
+      cx.beginPath();cx.arc(p.x,p.y,p.r*2.5,0,Math.PI*2);
+      cx.fillStyle=`rgba(0,229,180,${glow*.12})`;cx.fill();
+    }
+  });
+  // connect nearby
+  for(let i=0;i<pts.length;i++){
+    for(let j=i+1;j<pts.length;j++){
+      const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<110){
+        cx.beginPath();
+        cx.moveTo(pts[i].x,pts[i].y);cx.lineTo(pts[j].x,pts[j].y);
+        cx.strokeStyle=`rgba(0,229,180,${(1-d/110)*.07})`;
+        cx.lineWidth=.6;cx.stroke();
       }
     }
-    // fallback: try keyword matching
-    if(/study|college|christ/i.test(q)) return "I study at Christ University, Bengaluru.";
-    if(/game|revenue|games/i.test(q)) return "I have shipped multiple games and generated $10K+ revenue in a launch week.";
-    if(/llm|language model|model/i.test(q)) return "I'm exploring large language models to build helpful tools and experiences.";
-    // default fallback
-    return "Sorry — I don't know the exact answer. Try asking: Who are you? Where do you study? What have you built?";
   }
+  requestAnimationFrame(drawPts);
+}
+drawPts();
 
-  toggle.addEventListener('click', () => {
-    chat.classList.toggle('hidden');
-    toggle.classList.toggle('hidden');
-    input.focus();
+/* ── SCROLL REVEAL ── */
+const io=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')});
+},{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ── SMOOTH SCROLL ── */
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    document.querySelector(a.getAttribute('href'))?.scrollIntoView({behavior:'smooth',block:'start'});
   });
+});
 
-  closeBtn.addEventListener('click', () => {
-    chat.classList.add('hidden');
-    toggle.classList.remove('hidden');
-  });
+/* ── EMAIL REVEAL ── */
+function revealEmail(){
+  const btn=document.getElementById('emailBtn');
+  const email='budhaditya3211@gmail.com';
+  btn.innerHTML='<span>✉</span> '+email;
+  btn.onclick=()=>window.open('mailto:'+email);
+  btn.style.cursor='pointer';
+}
 
-  send.addEventListener('click', () => {
-    const text = input.value.trim();
-    if(!text) return;
-    append('user', text);
-    input.value = '';
-    // simulate thinking
-    append('bot', 'Thinking...');
-    setTimeout(() => {
-      // replace last bot "Thinking..." with real reply
-      const botNodes = messages.querySelectorAll('.bs-msg.bot');
-      const lastBot = botNodes[botNodes.length - 1];
-      if(lastBot) lastBot.remove();
-      append('bot', answer(text));
-    }, 600);
-  });
+/* ── GAME ── */
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+let gs={running:false,paused:false,score:0,lives:3,enemies:[],bullets:[],particles:[],rate:60,frame:0};
 
-  input.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter') { e.preventDefault(); send.click(); }
-  });
+class Enemy{
+  constructor(){this.x=Math.random()*(canvas.width-30);this.y=-30;this.w=28;this.h=28;this.spd=1+Math.random()*2;this.col=Math.random()>.5?'#ff2d6b':'#00e5b4'}
+  update(){this.y+=this.spd}
+  draw(){ctx.save();ctx.shadowBlur=18;ctx.shadowColor=this.col;ctx.fillStyle=this.col;ctx.fillRect(this.x,this.y,this.w,this.h);ctx.globalAlpha=.4;ctx.fillStyle='#fff';ctx.fillRect(this.x+8,this.y+8,12,12);ctx.restore()}
+  off(){return this.y>canvas.height}
+}
+class Bullet{
+  constructor(x,y){this.x=x;this.y=y;this.spd=9}
+  update(){this.y-=this.spd}
+  draw(){ctx.save();ctx.shadowBlur=14;ctx.shadowColor='#00e5b4';ctx.fillStyle='#00e5b4';ctx.fillRect(this.x-2,this.y,4,14);ctx.restore()}
+  off(){return this.y<-20}
+}
+class Particle{
+  constructor(x,y,col){this.x=x;this.y=y;this.vx=(Math.random()-.5)*9;this.vy=(Math.random()-.5)*9;this.sz=Math.random()*4+1;this.col=col;this.life=1;this.decay=.025+Math.random()*.02}
+  update(){this.x+=this.vx;this.y+=this.vy;this.life-=this.decay;this.vy+=.22}
+  draw(){ctx.save();ctx.globalAlpha=this.life;ctx.shadowBlur=8;ctx.shadowColor=this.col;ctx.fillStyle=this.col;ctx.fillRect(this.x,this.y,this.sz,this.sz);ctx.restore()}
+  dead(){return this.life<=0}
+}
 
-  // sample quick buttons
-  document.getElementById('bs-samples').addEventListener('click', (e) => {
-    if(e.target.classList.contains('bs-sample')){
-      const t = e.target.textContent;
-      input.value = t;
-      input.focus();
+function explode(x,y,col){for(let i=0;i<14;i++)gs.particles.push(new Particle(x,y,col))}
+function shoot(x){gs.bullets.push(new Bullet(x,canvas.height-22))}
+
+function collide(){
+  for(let i=gs.bullets.length-1;i>=0;i--){
+    for(let j=gs.enemies.length-1;j>=0;j--){
+      const b=gs.bullets[i],e=gs.enemies[j];
+      if(b&&e&&b.x>e.x&&b.x<e.x+e.w&&b.y>e.y&&b.y<e.y+e.h){
+        explode(e.x+14,e.y+14,e.col);
+        gs.enemies.splice(j,1);gs.bullets.splice(i,1);
+        gs.score+=10;document.getElementById('score').textContent=gs.score;break;
+      }
     }
-  });
+  }
+}
 
+function update(){
+  if(!gs.running||gs.paused)return;
+  gs.frame++;
+  if(gs.frame%gs.rate===0){gs.enemies.push(new Enemy());if(gs.rate>28)gs.rate--}
+  for(let i=gs.enemies.length-1;i>=0;i--){gs.enemies[i].update();if(gs.enemies[i].off()){gs.enemies.splice(i,1);gs.lives--;document.getElementById('lives').textContent=gs.lives;if(gs.lives<=0)gameover()}}
+  for(let i=gs.bullets.length-1;i>=0;i--){gs.bullets[i].update();if(gs.bullets[i].off())gs.bullets.splice(i,1)}
+  for(let i=gs.particles.length-1;i>=0;i--){gs.particles[i].update();if(gs.particles[i].dead())gs.particles.splice(i,1)}
+  collide();
+}
+
+function draw(){
+  ctx.fillStyle='rgba(5,5,16,.28)';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle='rgba(0,229,180,.04)';ctx.lineWidth=1;
+  for(let i=0;i<canvas.width;i+=28){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,canvas.height);ctx.stroke()}
+  for(let i=0;i<canvas.height;i+=28){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(canvas.width,i);ctx.stroke()}
+  gs.particles.forEach(p=>p.draw());
+  gs.enemies.forEach(e=>e.draw());
+  gs.bullets.forEach(b=>b.draw());
+  const sx=canvas.width/2,sy=canvas.height-24;
+  ctx.save();ctx.shadowBlur=24;ctx.shadowColor='#00e5b4';ctx.fillStyle='#00e5b4';
+  ctx.beginPath();ctx.moveTo(sx,sy-16);ctx.lineTo(sx-14,sy+14);ctx.lineTo(sx+14,sy+14);ctx.closePath();ctx.fill();ctx.restore();
+  if(gs.paused){ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#00e5b4';ctx.font='bold 36px monospace';ctx.textAlign='center';ctx.fillText('PAUSED',canvas.width/2,canvas.height/2)}
+}
+
+function loop(){update();draw();requestAnimationFrame(loop)}
+function startGame(){if(!gs.running){gs.running=true;gs.paused=false;loop()}else gs.paused=false}
+function pauseGame(){gs.paused=!gs.paused}
+function resetGame(){gs={running:true,paused:false,score:0,lives:3,enemies:[],bullets:[],particles:[],rate:60,frame:0};document.getElementById('score').textContent='0';document.getElementById('lives').textContent='3';ctx.fillStyle='#050510';ctx.fillRect(0,0,canvas.width,canvas.height)}
+function gameover(){
+  gs.running=false;ctx.fillStyle='rgba(0,0,0,.82)';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#ff2d6b';ctx.font='bold 44px monospace';ctx.textAlign='center';ctx.shadowBlur=28;ctx.shadowColor='#ff2d6b';ctx.fillText('GAME OVER',canvas.width/2,canvas.height/2-26);
+  ctx.fillStyle='#00e5b4';ctx.font='bold 26px monospace';ctx.shadowColor='#00e5b4';ctx.fillText('SCORE: '+gs.score,canvas.width/2,canvas.height/2+18);
+  ctx.fillStyle='#666';ctx.font='16px monospace';ctx.shadowBlur=0;ctx.fillText('RESET to play again',canvas.width/2,canvas.height/2+54);
+}
+canvas.addEventListener('click',e=>{if(gs.running&&!gs.paused){const r=canvas.getBoundingClientRect();shoot(e.clientX-r.left)}});
+ctx.fillStyle='#050510';ctx.fillRect(0,0,canvas.width,canvas.height);
+ctx.fillStyle='#00e5b4';ctx.font='bold 22px monospace';ctx.textAlign='center';ctx.fillText('Click START to play',canvas.width/2,canvas.height/2);
+
+/* ── CHATBOT ── */
+(function(){
+  let kb=[
+    {p:[/who (are )?you/i,/tell me about you/i,/budhaditya/i],r:"I'm Budhaditya Sanyal — 3rd year BA English Honours at Christ University, Bengaluru. I build products, ship games, and do growth & GTM."},
+    {p:[/study|college|university|christ/i],r:"Christ University, Bengaluru."},
+    {p:[/like|interest|passion/i],r:"Human connection, intelligent systems (LLMs), and interactive experiences like game development."},
+    {p:[/what (can|do) you do|capabilit/i],r:"Product, B2B sales, GTM, full-stack dev, game development, exploring LLMs."},
+    {p:[/done|built|projects|experience/i],r:"$10K+ game revenue in first week, multiple games shipped, helped raise ₹1.2Cr seed funding. Experience section has full details."},
+    {p:[/contact|email|phone/i],r:"Reveal the email in the Contact section, or reach out via LinkedIn."},
+    {p:[/portfolio|website/i],r:"You're on it! Scroll around or use the nav."},
+    {p:[/roblox|game/i],r:"Built games for One Piece, Attack on Titan, Snowpiercer on Roblox. $10K+ first week, millions of visits total."}
+  ];
+  function esc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
+  try{
+    const extra=document.getElementById('bs-kb');
+    if(extra){
+      JSON.parse(extra.textContent||'[]').forEach(e=>{
+        const patterns=[];
+        (e.patterns||[]).forEach(p=>{if(typeof p==='string')patterns.push(new RegExp('\\b'+esc(p)+'\\b','i'))});
+        if(patterns.length&&e.reply)kb.push({p:patterns,r:e.reply});
+        if(e.sample){const s=document.getElementById('bs-samples');if(s){const b=document.createElement('div');b.className='bs-sample';b.textContent=e.sample;s.appendChild(b)}}
+      });
+    }
+  }catch(e){}
+
+  const chat=document.getElementById('bs-chat'),tog=document.getElementById('bs-toggle'),
+    close=document.getElementById('bs-close'),msgs=document.getElementById('bs-messages'),
+    inp=document.getElementById('bs-input'),send=document.getElementById('bs-send');
+
+  function add(role,text){
+    const d=document.createElement('div');d.className='bs-msg '+role;d.textContent=text;
+    msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;
+  }
+  function answer(q){
+    for(const item of kb)for(const rx of item.p)if(rx.test(q))return item.r;
+    if(/game|revenue/i.test(q))return "Multiple games, $10K+ launch week revenue.";
+    if(/llm|ai|language/i.test(q))return "Exploring LLMs and in-game AI — it's a big focus right now.";
+    return "Not sure about that one. Try: Who are you? What have you built? Where do you study?";
+  }
+  tog.addEventListener('click',()=>{chat.classList.toggle('hidden');tog.classList.toggle('hidden');inp.focus()});
+  close.addEventListener('click',()=>{chat.classList.add('hidden');tog.classList.remove('hidden')});
+  send.addEventListener('click',()=>{
+    const t=inp.value.trim();if(!t)return;
+    add('user',t);inp.value='';add('bot','…');
+    setTimeout(()=>{msgs.querySelectorAll('.bs-msg.bot')[msgs.querySelectorAll('.bs-msg.bot').length-1].remove();add('bot',answer(t))},500);
+  });
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();send.click()}});
+  document.getElementById('bs-samples').addEventListener('click',e=>{
+    if(e.target.classList.contains('bs-sample')){inp.value=e.target.textContent;inp.focus()}
+  });
 })();
 </script>
-<!-- END: Chatbot widget -->
 </body>
 </html>
