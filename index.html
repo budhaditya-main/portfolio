@@ -4,8 +4,208 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Budhaditya Sanyal — Exploring & Optimizing</title>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@400;700&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+
+/* ══════════════════════════════════════════════
+   INTRO OVERLAY STYLES — v9
+══════════════════════════════════════════════ */
+
+#intro-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #f4efe4; overflow: hidden;
+  cursor: none; /* hide default cursor — we use pen cursor */
+}
+#intro-overlay::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.055'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 1;
+}
+#intro-overlay::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, transparent 38%, rgba(150,120,80,0.13) 100%);
+  pointer-events: none; z-index: 1;
+}
+
+/* ruled lines */
+.notebook-lines { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.notebook-lines::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(transparent, transparent 44px, rgba(140,160,210,0.13) 44px, rgba(140,160,210,0.13) 45px);
+  background-position: 0 80px;
+}
+.notebook-lines::after {
+  content: ''; position: absolute; top: 0; bottom: 0;
+  left: 52px; width: 1px; background: rgba(210,80,80,0.12);
+}
+
+/* ring holes */
+.ring-holes {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; justify-content: center; gap: clamp(44px,8vw,100px);
+  padding-top: 14px; pointer-events: none; z-index: 2;
+}
+.ring {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #f4efe4; border: 2px solid rgba(150,130,110,0.28);
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.12), 0 1px 2px rgba(255,255,255,0.5);
+  flex-shrink: 0;
+}
+.page-shadow {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  box-shadow: inset 0 0 80px rgba(180,150,110,0.06), 0 14px 70px rgba(0,0,0,0.2);
+}
+.smudge { position: absolute; border-radius: 50%; background: rgba(140,110,70,0.05); pointer-events: none; z-index: 2; }
+.smudge-1 { width:110px; height:36px; top:38%; left:6%; transform:rotate(-11deg); filter:blur(10px); }
+.smudge-2 { width:75px; height:22px; bottom:25%; right:9%; transform:rotate(8deg); filter:blur(7px); }
+.page-curl {
+  position: absolute; bottom: 0; right: 0; width: 42px; height: 42px;
+  background: linear-gradient(225deg, #e6d9c2 50%, rgba(140,110,70,0.2) 50%);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%); opacity: 0.6; pointer-events: none; z-index: 4;
+}
+
+/* journal header */
+.journal-header {
+  position: absolute; top: 22px; right: 32px;
+  font-family: 'Caveat', cursive; font-size: clamp(0.8rem,1.4vw,0.95rem);
+  color: rgba(100,80,50,0.38); text-align: right; z-index: 4;
+  opacity: 0; transition: opacity 1.4s ease; line-height: 1.5;
+}
+.journal-header.show { opacity: 1; }
+
+/* ── INK TRAIL CANVAS — sits above paper, below text ── */
+#ink-canvas {
+  position: absolute; inset: 0; z-index: 3;
+  pointer-events: none;
+}
+
+/* ── PEN CURSOR SVG ── */
+#pen-cursor {
+  position: fixed; z-index: 10001; pointer-events: none;
+  width: 32px; height: 32px;
+  transform-origin: 4px 28px; /* tip of pen */
+  transform: translate(-4px, -28px) rotate(-35deg);
+  transition: opacity 0.2s;
+  display: none; /* shown only when intro is active */
+}
+
+/* ── floating text lines ── */
+.floating-line {
+  position: absolute; font-family: 'Caveat', cursive; font-weight: 500;
+  color: #2a1e0e; line-height: 1.25; letter-spacing: 0.015em;
+  white-space: nowrap; z-index: 5; opacity: 0; transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+.floating-line.visible { opacity: 1; }
+.floating-line.fading  { opacity: 0; transition: opacity 0.5s ease; }
+
+/* highlights */
+.hl-name {
+  background: linear-gradient(135deg, #00c49a 0%, #ff3d7a 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; font-weight: 700; display: inline;
+}
+.hl-kid   { color:#d44800; font-weight:700; font-style:italic; display:inline; }
+.hl-wimpy { color:#c97b00; font-weight:700; text-decoration:underline;
+            text-decoration-color:rgba(201,123,0,0.45); text-underline-offset:3px; display:inline; }
+
+/* typing pen cursor (text) */
+.pen-cursor {
+  display:inline-block; width:2.5px; height:1em; background:#1a4a9a; border-radius:2px;
+  vertical-align:middle; margin-left:2px;
+  animation:blink-cursor 0.85s ease infinite; position:relative; top:-0.06em;
+  box-shadow:0 0 8px rgba(26,74,154,0.5);
+}
+@keyframes blink-cursor { 0%,42%{opacity:1} 58%,100%{opacity:0} }
+.char { display:inline; opacity:0; animation:ink-appear 0.05s ease forwards; }
+@keyframes ink-appear { from{opacity:0} to{opacity:1} }
+
+/* ── DOODLES — SVG self-drawing ── */
+.doodle-note {
+  position: absolute; z-index: 6; pointer-events: none;
+  opacity: 0; transition: opacity 0.3s ease;
+  font-family: 'Caveat', cursive;
+  color: rgba(100,80,50,0.32);
+}
+.doodle-note.show { opacity: 1; }
+/* SVG path animation */
+.doodle-note svg { overflow: visible; }
+.doodle-note path {
+  fill: none;
+  stroke: rgba(100,80,50,0.32);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.doodle-note.draw path {
+  stroke-dashoffset: 0 !important;
+  transition: stroke-dashoffset 0.6s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── progress dots ── */
+#progress-dots {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 8px; z-index: 6; align-items: center;
+}
+.pdot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(100,80,50,0.2); transition: background 0.4s ease, transform 0.3s ease;
+}
+.pdot.active { background: rgba(100,80,50,0.7); transform: scale(1.3); }
+.pdot.done   { background: rgba(100,80,50,0.4); }
+
+/* skip */
+#skip-btn {
+  position: absolute; top: 18px; left: 70px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+  color: rgba(100,80,50,0.35); background: transparent; border: none;
+  cursor: pointer; letter-spacing: 0.1em; text-transform: uppercase;
+  z-index: 6; padding: 4px 8px; transition: color 0.2s;
+}
+#skip-btn:hover { color: rgba(80,55,20,0.75); }
+
+/* turn the page */
+.scroll-hint-intro {
+  position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%);
+  font-family: 'Caveat', cursive; font-size: 1.15rem;
+  color: rgba(100,80,50,0.42); opacity: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer; z-index: 7; text-align: center; white-space: nowrap;
+  background: none; border: none; transition: color 0.3s;
+}
+.scroll-hint-intro:hover { color: rgba(80,55,20,0.8); }
+.scroll-hint-intro.show { animation: hint-appear 0.9s ease forwards; }
+@keyframes hint-appear {
+  from { opacity:0; transform:translateX(-50%) translateY(8px); }
+  to   { opacity:1; transform:translateX(-50%) translateY(0); }
+}
+.scroll-arrow {
+  display:block; width:18px; height:18px;
+  border-right:1.8px solid rgba(100,80,50,0.4); border-bottom:1.8px solid rgba(100,80,50,0.4);
+  transform:rotate(45deg); margin:0 auto;
+  animation:arrow-bounce 1.6s ease-in-out infinite;
+}
+@keyframes arrow-bounce {
+  0%,100%{ transform:rotate(45deg) translateY(0); } 50%{ transform:rotate(45deg) translateY(4px); }
+}
+
+/* burst canvas */
+#burn-canvas { position:fixed; inset:0; z-index:10000; pointer-events:none; display:none; width:100%; height:100%; }
+
+/* intro page */
+.intro-page {
+  position: absolute; inset: 0; opacity: 0;
+  animation: page-arrive 1s cubic-bezier(.22,1,.36,1) 0.2s forwards;
+}
+@keyframes page-arrive {
+  from { opacity:0; transform:scale(0.97) translateY(10px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+
+/* ══════════════════════════════════════════════
+   PORTFOLIO STYLES (original)
+══════════════════════════════════════════════ */
+
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 :root{
@@ -31,16 +231,15 @@ body{
   overflow-x:hidden;
   line-height:1.6;
   cursor:none;
+  /* NOTE: overflow-y is only locked during intro via JS, never via CSS */
 }
 
-/* ── CANVAS PARTICLE BG ── */
 #bg-canvas{
   position:fixed;inset:0;
   pointer-events:none;z-index:0;
   opacity:.45;
 }
 
-/* ── CUSTOM CURSOR ── */
 #cur,#cur2{
   position:fixed;border-radius:50%;
   pointer-events:none;z-index:9999;
@@ -61,7 +260,6 @@ body:has(button:hover) #cur{transform:translate(-50%,-50%) scale(2.5);background
 body:has(a:hover) #cur2,
 body:has(button:hover) #cur2{width:56px;height:56px;border-color:rgba(255,45,107,.5)}
 
-/* ── SCROLL BAR ── */
 #prog{
   position:fixed;top:0;left:0;height:2px;
   background:linear-gradient(90deg,var(--teal),var(--pink));
@@ -69,7 +267,6 @@ body:has(button:hover) #cur2{width:56px;height:56px;border-color:rgba(255,45,107
   box-shadow:0 0 8px var(--teal);
 }
 
-/* ── GRAIN ── */
 body::before{
   content:'';position:fixed;inset:0;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
@@ -84,10 +281,8 @@ body::before{
   80%{transform:translate(2%,8%)}90%{transform:translate(-8%,4%)}
 }
 
-/* ── LAYOUT ── */
 .wrap{max-width:1160px;margin:0 auto;padding:0 var(--r);position:relative;z-index:2}
 
-/* ── HEADER ── */
 header{
   position:sticky;top:0;z-index:500;
   padding:.9rem 0;
@@ -116,7 +311,6 @@ header .wrap{display:flex;justify-content:space-between;align-items:center;gap:1
 .nav-links a:hover{color:var(--fg)}
 .nav-links a:hover::after{width:100%}
 
-/* ── HERO ── */
 .hero{
   min-height:100svh;
   display:flex;flex-direction:column;justify-content:center;
@@ -135,18 +329,52 @@ header .wrap{display:flex;justify-content:space-between;align-items:center;gap:1
 
 .hero-title{
   font-family:'Unbounded',sans-serif;
-  font-size:clamp(2.4rem,7.5vw,7rem);
-  font-weight:900;line-height:1.0;
+  font-size:clamp(2.2rem,6.5vw,5.8rem);
+  font-weight:900;line-height:1.05;
   letter-spacing:-.04em;
   margin-bottom:2rem;
   opacity:0;animation:fadeUp .8s .25s ease forwards;
 }
-.hero-title .line{display:block;overflow:hidden}
+.hero-title .line{
+  display:block;overflow:hidden;
+  padding:.08em 0;
+}
+.hero-title .line span{
+  display:inline-block;
+  animation:slideUp .9s cubic-bezier(.23,1,.32,1) forwards;
+  opacity:0;transform:translateY(100%);
+}
+.hero-title .line:nth-child(1) span{animation-delay:.3s}
+.hero-title .line:nth-child(2) span{animation-delay:.45s}
+.hero-title .line:nth-child(3) span{animation-delay:.6s}
+@keyframes slideUp{
+  to{opacity:1;transform:translateY(0)}
+}
 .hero-title em{
   font-style:normal;
   background:linear-gradient(135deg,var(--teal) 0%,var(--pink) 100%);
+  background-size:200% 200%;
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-clip:text;
+  animation:gradientShift 4s ease infinite;
+  position:relative;
+}
+.hero-title em::after{
+  content:'';
+  position:absolute;
+  bottom:-.05em;left:0;right:0;
+  height:3px;
+  background:linear-gradient(90deg,var(--teal),var(--pink));
+  opacity:.6;
+  animation:pulseGlow 2s ease-in-out infinite;
+}
+@keyframes gradientShift{
+  0%,100%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+}
+@keyframes pulseGlow{
+  0%,100%{opacity:.4;transform:scaleX(1)}
+  50%{opacity:.8;transform:scaleX(1.02)}
 }
 
 .hero-sub{
@@ -183,7 +411,6 @@ header .wrap{display:flex;justify-content:space-between;align-items:center;gap:1
   transform:translateY(-2px);
 }
 
-/* scroll indicator */
 .scroll-hint{
   position:absolute;bottom:2.5rem;left:var(--r);
   font-family:'JetBrains Mono',monospace;
@@ -195,7 +422,6 @@ header .wrap{display:flex;justify-content:space-between;align-items:center;gap:1
   content:'';width:1px;height:40px;background:linear-gradient(var(--teal),transparent);
 }
 
-/* hero big number bg */
 .hero-bg-num{
   position:absolute;right:-2%;top:50%;
   transform:translateY(-50%);
@@ -207,7 +433,147 @@ header .wrap{display:flex;justify-content:space-between;align-items:center;gap:1
   user-select:none;
 }
 
-/* ── STATS MARQUEE BAND ── */
+.hero-orb{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(60px);
+  pointer-events:none;
+  opacity:.15;
+  animation:float 8s ease-in-out infinite;
+}
+.hero-orb-1{
+  width:300px;height:300px;
+  background:radial-gradient(circle,var(--teal),transparent);
+  top:10%;left:5%;
+  animation-delay:0s;
+}
+.hero-orb-2{
+  width:400px;height:400px;
+  background:radial-gradient(circle,var(--pink),transparent);
+  bottom:10%;right:10%;
+  animation-delay:2s;
+}
+@keyframes float{
+  0%,100%{transform:translate(0,0) scale(1)}
+  25%{transform:translate(20px,-20px) scale(1.05)}
+  50%{transform:translate(-10px,10px) scale(.95)}
+  75%{transform:translate(-20px,-10px) scale(1.02)}
+}
+
+.hero-deco{
+  position:absolute;
+  pointer-events:none;
+  opacity:0;
+  animation:fadeIn 1s ease forwards;
+}
+
+.hero-badge{
+  left:max(2rem,calc((100vw - 1160px)/2 - 200px));
+  top:28%;
+  display:flex;
+  flex-direction:column;
+  gap:1.5rem;
+  animation-delay:.8s;
+}
+.badge-item{
+  background:rgba(0,229,180,.08);
+  border:1px solid rgba(0,229,180,.2);
+  border-radius:8px;
+  padding:1rem 1.2rem;
+  backdrop-filter:blur(10px);
+  animation:floatBadge 4s ease-in-out infinite;
+}
+.badge-item:nth-child(2){animation-delay:.5s}
+.badge-item:nth-child(3){animation-delay:1s}
+@keyframes floatBadge{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-10px)}
+}
+.badge-num{
+  font-family:'Unbounded',sans-serif;
+  font-size:1.5rem;
+  font-weight:700;
+  color:var(--teal);
+  line-height:1;
+  margin-bottom:.3rem;
+}
+.badge-label{
+  font-size:.75rem;
+  color:var(--fg2);
+  letter-spacing:.05em;
+}
+
+.hero-labels{
+  right:max(2rem,calc((100vw - 1160px)/2 - 180px));
+  top:30%;
+  display:flex;
+  flex-direction:column;
+  gap:3rem;
+  animation-delay:1s;
+}
+.float-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.8rem;
+  color:var(--fg3);
+  letter-spacing:.1em;
+  padding:.6rem 1rem;
+  border:1px dashed rgba(255,45,107,.2);
+  border-radius:4px;
+  background:rgba(255,45,107,.04);
+  position:relative;
+  animation:floatLabel 5s ease-in-out infinite;
+  white-space:nowrap;
+}
+.float-label:nth-child(2){animation-delay:.7s}
+.float-label:nth-child(3){animation-delay:1.4s}
+@keyframes floatLabel{
+  0%,100%{transform:translateX(0) rotate(0deg)}
+  50%{transform:translateX(8px) rotate(1deg)}
+}
+.float-label::before{
+  content:'→';
+  position:absolute;
+  left:-25px;
+  color:var(--pink);
+  font-size:1.2rem;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%,100%{opacity:.4;transform:translateX(0)}
+  50%{opacity:1;transform:translateX(5px)}
+}
+
+.hero-dots{
+  position:absolute;
+  top:20%;
+  left:15%;
+  width:120px;
+  height:120px;
+  opacity:.15;
+  animation:rotate 20s linear infinite;
+  animation-delay:1.2s;
+}
+@keyframes rotate{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
+.hero-dots::before,
+.hero-dots::after{
+  content:'';
+  position:absolute;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--teal);
+}
+.hero-dots::before{top:0;left:0}
+.hero-dots::after{bottom:0;right:0;background:var(--pink)}
+
+@media(max-width:1400px){
+  .hero-badge,
+  .hero-labels{display:none}
+}
+
 .marquee-band{
   border-top:1px solid var(--line);
   border-bottom:1px solid var(--line);
@@ -233,7 +599,6 @@ header .wrap{display:flex;justify-content:space-between;align-items:center;gap:1
 }
 .marquee-dot{color:var(--fg3);font-size:1.2rem}
 
-/* ── SECTION SHARED ── */
 .section{padding:6rem 0;position:relative;z-index:2}
 .section-tag{
   font-family:'JetBrains Mono',monospace;
@@ -250,7 +615,6 @@ header .wrap{display:flex;justify-content:space-between;align-items:center;gap:1
   line-height:1.1;margin-bottom:3rem;
 }
 
-/* ── ABOUT SECTION ── */
 .about-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -282,7 +646,6 @@ header .wrap{display:flex;justify-content:space-between;align-items:center;gap:1
 .passion-box p{font-size:.95rem;color:var(--fg2);line-height:1.8}
 .passion-box strong{color:var(--teal);font-weight:500}
 
-/* ── EXPERIENCE ── */
 .exp-list{display:flex;flex-direction:column;gap:.6rem}
 .exp-card{
   background:var(--bg2);
@@ -335,7 +698,6 @@ header .wrap{display:flex;justify-content:space-between;align-items:center;gap:1
   color:var(--teal);font-size:.75rem;top:.15em;
 }
 
-/* ── SKILLS ── */
 .skills-grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -370,7 +732,6 @@ header .wrap{display:flex;justify-content:space-between;align-items:center;gap:1
   background:rgba(0,229,180,.06);
 }
 
-/* ── GAME ── */
 .game-wrap{
   background:var(--bg2);border:1px solid var(--line);
   border-radius:14px;padding:2.5rem;
@@ -420,7 +781,6 @@ header .wrap{display:flex;justify-content:space-between;align-items:center;gap:1
 .gbtn:hover{border-color:var(--teal);color:var(--teal);box-shadow:0 0 16px var(--glow-t)}
 .gbtn.active{background:var(--teal);color:#080808;border-color:var(--teal)}
 
-/* ── CONTACT ── */
 .contact-hero{
   text-align:center;
   padding:3rem 0 4rem;
@@ -458,7 +818,6 @@ header .wrap{display:flex;justify-content:space-between;align-items:center;gap:1
 .clink-email:hover{background:var(--teal2);color:#080808;box-shadow:0 0 30px var(--glow-t)}
 .clink-icon{font-size:1rem}
 
-/* ── FOOTER ── */
 footer{
   border-top:1px solid var(--line);padding:2rem 0;
   text-align:center;color:var(--fg3);font-size:.8rem;
@@ -466,7 +825,6 @@ footer{
 }
 footer span{color:var(--teal)}
 
-/* ── CHATBOT ── */
 #bs-chat{
   position:fixed;right:20px;bottom:20px;
   width:min(360px,calc(100vw - 28px));
@@ -553,7 +911,6 @@ footer span{color:var(--teal)}
 #bs-toggle:hover{transform:scale(1.08);box-shadow:0 6px 32px rgba(0,229,180,.4)}
 #bs-toggle.hidden{display:none}
 
-/* ── REVEAL ANIMATIONS ── */
 .reveal{
   opacity:0;transform:translateY(32px);
   transition:opacity .7s ease,transform .7s ease;
@@ -569,10 +926,8 @@ footer span{color:var(--teal)}
   to{opacity:1;transform:translateY(0)}
 }
 
-/* ── DIVIDER ── */
 .divider{height:1px;background:var(--line);margin:0}
 
-/* ── MOBILE ── */
 @media(max-width:768px){
   :root{--r:1.1rem}
   .nav-links{gap:.9rem}
@@ -600,12 +955,66 @@ footer span{color:var(--teal)}
 </head>
 <body>
 
+<!-- ══ BURST CANVAS ══ -->
+<canvas id="burn-canvas"></canvas>
+
+<!-- ══ PEN CURSOR ══ -->
+<svg id="pen-cursor" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- pen body -->
+  <rect x="13" y="2" width="6" height="18" rx="1.5" fill="#2a4a8a" opacity="0.9"/>
+  <!-- pen grip -->
+  <rect x="13" y="16" width="6" height="5" rx="1" fill="#1a3a7a"/>
+  <!-- pen tip metal -->
+  <polygon points="13,21 19,21 16,28" fill="#8a9a9a"/>
+  <!-- pen nib -->
+  <polygon points="14.5,26 17.5,26 16,31" fill="#2a2a2a"/>
+  <!-- ink drop at very tip -->
+  <circle cx="16" cy="31" r="1.2" fill="#1a1a6a" opacity="0.7"/>
+  <!-- shine -->
+  <rect x="14.5" y="4" width="2" height="8" rx="1" fill="white" opacity="0.3"/>
+</svg>
+
+<!-- ══ INTRO OVERLAY ══ -->
+<div id="intro-overlay">
+  <div class="intro-page" id="intro-page">
+    <div class="notebook-lines" id="notebook-lines-el"></div>
+    <canvas id="ink-canvas"></canvas>
+    <div class="ring-holes">
+      <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+      <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+      <div class="ring"></div><div class="ring"></div>
+    </div>
+    <div class="page-shadow"></div>
+    <div class="smudge smudge-1"></div>
+    <div class="smudge smudge-2"></div>
+    <div class="page-curl"></div>
+    <div class="journal-header" id="journal-header">
+      Feb 2025<br>
+      <span style="font-size:0.82em;opacity:0.6">somewhere in Bangalore</span>
+    </div>
+    <button id="skip-btn" onclick="triggerBurnExit()">Skip intro ✕</button>
+    <div id="sound-hint" style="
+      position:absolute; bottom:58px; right:28px; z-index:7;
+      font-family:'Caveat',cursive; font-size:0.78rem;
+      color:rgba(100,80,50,0.38); display:flex; align-items:center; gap:5px;
+      transition:opacity 0.6s ease; pointer-events:none;
+    ">🖊 click anywhere for sound</div>
+    <div id="progress-dots"></div>
+    <button class="scroll-hint-intro" id="scroll-hint" onclick="triggerBurnExit()">
+      Turn the page
+      <span class="scroll-arrow"></span>
+    </button>
+  </div>
+</div>
+<!-- ══════════════════════════════════════════════
+     PORTFOLIO
+══════════════════════════════════════════════ -->
+
 <canvas id="bg-canvas"></canvas>
 <div id="cur"></div>
 <div id="cur2"></div>
 <div id="prog"></div>
 
-<!-- ══ HEADER ══ -->
 <header>
   <div class="wrap">
     <div class="logo">BS.</div>
@@ -619,15 +1028,14 @@ footer span{color:var(--teal)}
   </div>
 </header>
 
-<!-- ══ HERO ══ -->
 <section class="hero">
   <div class="wrap">
     <div class="hero-eyebrow">Exploring &amp; Optimizing</div>
     <h1 class="hero-title">
-      <span class="line">Hey, I'm</span>
-      <span class="line"><em>Budhaditya.</em></span>
-      <span class="line">I build things</span>
-      <span class="line">that matter.</span>
+      <span class="line"><span>Hey, I'm</span></span>
+      <span class="line"><span><em>Budhaditya.</em></span></span>
+      <span class="line"><span>I build things</span></span>
+      <span class="line"><span>that matter.</span></span>
     </h1>
     <p class="hero-sub">Third-year student with real-world runs in B2B sales, game development, and startup growth. Currently figuring out how to make the biggest dent possible.</p>
     <div class="cta-row">
@@ -637,12 +1045,32 @@ footer span{color:var(--teal)}
     <div class="scroll-hint">scroll</div>
   </div>
   <div class="hero-bg-num" aria-hidden="true">BS</div>
+  <div class="hero-orb hero-orb-1" aria-hidden="true"></div>
+  <div class="hero-orb hero-orb-2" aria-hidden="true"></div>
+  <div class="hero-deco hero-badge" aria-hidden="true">
+    <div class="badge-item">
+      <div class="badge-num">₹1.2Cr</div>
+      <div class="badge-label">Seed Funding</div>
+    </div>
+    <div class="badge-item">
+      <div class="badge-num">4+</div>
+      <div class="badge-label">Games Shipped</div>
+    </div>
+    <div class="badge-item">
+      <div class="badge-num">$10K+</div>
+      <div class="badge-label">Week 1 Revenue</div>
+    </div>
+  </div>
+  <div class="hero-deco hero-labels" aria-hidden="true">
+    <div class="float-label">Building Products</div>
+    <div class="float-label">Shipping Fast</div>
+    <div class="float-label">Exploring AI</div>
+  </div>
+  <div class="hero-deco hero-dots" aria-hidden="true"></div>
 </section>
 
-<!-- ══ MARQUEE STATS ══ -->
 <div class="marquee-band" aria-label="Key stats">
   <div class="marquee-track">
-    <!-- first set -->
     <div class="marquee-item"><span class="marquee-num">$10K+</span><span class="marquee-label">Revenue, First Week</span></div>
     <div class="marquee-item"><span class="marquee-dot">·</span></div>
     <div class="marquee-item"><span class="marquee-num">₹1.2Cr</span><span class="marquee-label">Seed Funding Raised</span></div>
@@ -653,7 +1081,6 @@ footer span{color:var(--teal)}
     <div class="marquee-item"><span class="marquee-dot">·</span></div>
     <div class="marquee-item"><span class="marquee-num">3rd Year</span><span class="marquee-label">Christ University, Blr</span></div>
     <div class="marquee-item"><span class="marquee-dot">·</span></div>
-    <!-- duplicate for seamless loop -->
     <div class="marquee-item"><span class="marquee-num">$10K+</span><span class="marquee-label">Revenue, First Week</span></div>
     <div class="marquee-item"><span class="marquee-dot">·</span></div>
     <div class="marquee-item"><span class="marquee-num">₹1.2Cr</span><span class="marquee-label">Seed Funding Raised</span></div>
@@ -667,7 +1094,6 @@ footer span{color:var(--teal)}
   </div>
 </div>
 
-<!-- ══ ABOUT ══ -->
 <section class="section" id="about">
   <div class="wrap">
     <div class="section-tag">About</div>
@@ -692,7 +1118,6 @@ footer span{color:var(--teal)}
 
 <div class="divider"></div>
 
-<!-- ══ EXPERIENCE ══ -->
 <section class="section" id="experience">
   <div class="wrap">
     <div class="section-tag">Experience</div>
@@ -790,7 +1215,6 @@ footer span{color:var(--teal)}
 
 <div class="divider"></div>
 
-<!-- ══ SKILLS ══ -->
 <section class="section" id="skills">
   <div class="wrap">
     <div class="section-tag">Capabilities</div>
@@ -834,7 +1258,6 @@ footer span{color:var(--teal)}
 
 <div class="divider"></div>
 
-<!-- ══ GAME ══ -->
 <section class="section" id="game">
   <div class="wrap">
     <div class="section-tag">THE CREATION</div>
@@ -860,7 +1283,6 @@ footer span{color:var(--teal)}
 
 <div class="divider"></div>
 
-<!-- ══ CONTACT ══ -->
 <section class="section" id="contact">
   <div class="wrap">
     <div class="contact-hero reveal">
@@ -882,7 +1304,6 @@ footer span{color:var(--teal)}
   </div>
 </section>
 
-<!-- ══ FOOTER ══ -->
 <footer>
   <div class="wrap">
     <p>© 2025 <span>Budhaditya Sanyal</span> · Built from scratch · Always optimising.</p>
@@ -897,19 +1318,21 @@ footer span{color:var(--teal)}
   </div>
   <div class="messages" id="bs-messages">
     <div class="bs-msg bot">
-      Hey! I can answer things about Budhaditya.
-      <div class="hint">Try: "Who are you?", "What have you built?", "Where do you study?"</div>
+      Hey! I can answer questions about Budhaditya's work, skills, and experience.
+      <div class="hint">Try asking about companies, games, skills, or opportunities</div>
       <div id="bs-samples">
-        <div class="bs-sample">Who are you?</div>
-        <div class="bs-sample">Where do you study?</div>
-        <div class="bs-sample">What can you do?</div>
+        <div class="bs-sample">What's the coolest thing you've built?</div>
+        <div class="bs-sample">What are you obsessed with right now?</div>
+        <div class="bs-sample">What makes you different?</div>
       </div>
     </div>
     <script type="application/json" id="bs-kb">
       [
-        {"sample":"What jobs have you done?","patterns":["jobs","experience","what have you done"],"reply":"B2B sales, game development, GTM, and product growth. See the Experience section for the full breakdown."},
-        {"sample":"How can I contact you?","patterns":["contact","email","reach out"],"reply":"Reveal the email in the Contact section, or hit him up on LinkedIn — link's at the bottom."},
-        {"sample":"Tell me about your games","patterns":["games","revenue","launched","roblox"],"reply":"Multiple games shipped on Roblox — $10K+ revenue in the first week of one launch. Games for One Piece, AoT, Snowpiercer universes. Millions of visits."}
+        {"sample":"What's the coolest thing you've built?","patterns":["coolest","cool thing","best thing","proudest"],"reply":"Honestly? A Roblox game that hit $10K+ revenue in its first week — built for the Attack on Titan universe. But I'm equally proud of helping raise ₹1.2 Cr seed funding at EarlyJobs. Two completely different things, same underlying instinct: build what actually resonates."},
+        {"sample":"What are you obsessed with right now?","patterns":["obsessed","into","currently","right now","these days"],"reply":"LLMs and computational linguistics. The idea that you can build something that genuinely understands human intent — that's wild to me. Also still very much obsessed with game design. And yes, I'm rewatching Diary of a Wimpy Kid for the fourth time."},
+        {"sample":"What makes you different?","patterns":["different","unique","stand out","special","why you"],"reply":"Most people pick a lane — sales OR tech OR creative. I've never done that. I've raised funding, shipped games, onboarded enterprise clients, and built AI tools all before finishing my degree. I think the combination is genuinely rare."},
+        {"sample":"Tell me about your games","patterns":["games","revenue","roblox","gaming"],"reply":"Built games on Roblox for Attack on Titan, One Piece, and Snowpiercer. One launch hit $10K+ in week one. I handled everything — 3D modeling, game mechanics, marketing, and working with rights holders. Millions of visits total."},
+        {"sample":"Are you open to work?","patterns":["hiring","opportunity","job","work","collaborate"],"reply":"Yes! Most interested in roles where I can build — product, growth, B2B, or anything AI-adjacent. If you're working on something interesting, I want to hear about it. Contact section has my details."}
       ]
     </script>
   </div>
@@ -921,6 +1344,471 @@ footer span{color:var(--teal)}
 <button id="bs-toggle">BS</button>
 
 <script>
+/* ══════════════════════════════════════════════
+   INTRO ENGINE v9 — pen cursor, ink trail, paper sounds,
+   ink bleeds, self-drawing doodles
+══════════════════════════════════════════════ */
+
+document.body.style.overflowY = 'hidden';
+
+/* ══ PEN CURSOR SETUP ══════════════════════════════════════════ */
+const penEl = document.getElementById('pen-cursor');
+penEl.style.display = 'block';
+
+// Track mouse for pen cursor + ink trail
+let mouseX = window.innerWidth/2, mouseY = window.innerHeight/2;
+let prevX = mouseX, prevY = mouseY;
+let mouseSpeed = 0;
+
+document.getElementById('intro-overlay').addEventListener('mousemove', e => {
+  prevX = mouseX; prevY = mouseY;
+  mouseX = e.clientX; mouseY = e.clientY;
+  const dx = mouseX - prevX, dy = mouseY - prevY;
+  mouseSpeed = Math.sqrt(dx*dx + dy*dy);
+  // Move pen: tip at cursor position, tilted
+  penEl.style.left = mouseX + 'px';
+  penEl.style.top  = mouseY + 'px';
+  // Slight rotation following direction of movement
+  const angle = mouseSpeed > 1 ? Math.atan2(dy, dx) * 180/Math.PI : -35;
+  penEl.style.transform = `translate(-4px,-28px) rotate(${-35 + angle * 0.08}deg)`;
+  drawInkStroke(prevX, prevY, mouseX, mouseY, mouseSpeed);
+}, { passive: true });
+
+document.getElementById('intro-overlay').addEventListener('mouseleave', () => {
+  penEl.style.opacity = '0.3';
+});
+document.getElementById('intro-overlay').addEventListener('mouseenter', () => {
+  penEl.style.opacity = '1';
+});
+
+/* ══ INK TRAIL CANVAS ══════════════════════════════════════════ */
+const inkCanvas = document.getElementById('ink-canvas');
+const inkCtx = inkCanvas.getContext('2d');
+let inkW, inkH;
+
+function resizeInk() {
+  inkW = inkCanvas.width  = inkCanvas.offsetWidth;
+  inkH = inkCanvas.height = inkCanvas.offsetHeight;
+}
+resizeInk();
+window.addEventListener('resize', resizeInk, { passive: true });
+
+// Ink trail — draws semi-transparent strokes that persist
+function drawInkStroke(x1, y1, x2, y2, speed) {
+  // Pressure: slow = thick, fast = thin
+  const pressure = Math.max(0.1, 1 - speed / 40);
+  const lineWidth = 1.2 + pressure * 2.2;
+  const alpha = 0.06 + pressure * 0.09;
+
+  inkCtx.beginPath();
+  inkCtx.moveTo(x1, y1);
+  inkCtx.lineTo(x2, y2);
+  inkCtx.strokeStyle = `rgba(30,20,10,${alpha})`;
+  inkCtx.lineWidth = lineWidth;
+  inkCtx.lineCap = 'round';
+  inkCtx.lineJoin = 'round';
+  inkCtx.stroke();
+
+  // Occasional ink blob at slow movement (pen dwelling)
+  if (speed < 2 && Math.random() < 0.15) {
+    inkCtx.beginPath();
+    inkCtx.arc(x2, y2, 1.5 + Math.random() * 2, 0, Math.PI*2);
+    inkCtx.fillStyle = `rgba(20,15,5,${alpha * 1.4})`;
+    inkCtx.fill();
+  }
+
+  // Check if crossing a ruled line → ink bleed
+  checkLineBleed(x2, y2);
+}
+
+/* ══ INK BLEEDS ON RULED LINES ═════════════════════════════════ */
+// Ruled lines start at y=80, repeat every 44px
+const LINE_START_Y = 80;
+const LINE_GAP     = 44;
+const bleeds = new Set(); // track which lines already have a bleed near this x
+
+function checkLineBleed(x, y) {
+  // Find nearest ruled line
+  const offset = (y - LINE_START_Y) % LINE_GAP;
+  const dist   = Math.min(offset, LINE_GAP - offset);
+  if (dist < 5 && Math.random() < 0.25) {
+    const lineY = y - offset + (offset > LINE_GAP/2 ? LINE_GAP : 0);
+    const key = `${Math.round(x/30)}_${lineY}`;
+    if (!bleeds.has(key)) {
+      bleeds.add(key);
+      drawBleed(x, lineY);
+    }
+  }
+}
+
+function drawBleed(x, y) {
+  // Small ink blob/smear on the ruled line
+  inkCtx.save();
+  inkCtx.globalAlpha = 0.18 + Math.random() * 0.14;
+  inkCtx.fillStyle = 'rgba(26,74,138,0.6)'; // pen ink color
+  const w = 3 + Math.random() * 8;
+  const h = 1 + Math.random() * 2.5;
+  inkCtx.translate(x, y);
+  inkCtx.rotate((Math.random()-0.5)*0.5);
+  inkCtx.beginPath();
+  inkCtx.ellipse(0, 0, w, h, 0, 0, Math.PI*2);
+  inkCtx.fill();
+  inkCtx.restore();
+}
+
+/* ══ PEN SCRATCH AUDIO ═════════════════════════════════════════ */
+// Uses a real pen-writing WAV fetched from freesound (public domain)
+// We load ONE short sample, then replay it pitched/trimmed per character
+
+let audioCtx = null;
+let penBuffer = null;   // decoded audio buffer of the real pen sound
+let audioReady = false;
+let lastSoundTime = 0;
+
+// Free public-domain pen writing sounds — we try a couple CDN-hosted ones
+// Freesound API open samples (CC0):
+const SOUND_URLS = [
+  'https://cdn.freesound.org/previews/561/561192_6142149-lq.mp3',  // pen writing
+  'https://cdn.freesound.org/previews/240/240778_4107918-lq.mp3',  // pencil scratch
+];
+
+async function initAudio() {
+  if (audioCtx) {
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    return;
+  }
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    await audioCtx.resume();
+
+    // Try to fetch and decode a real pen sound
+    for (const url of SOUND_URLS) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const arr = await res.arrayBuffer();
+        penBuffer = await audioCtx.decodeAudioData(arr);
+        audioReady = true;
+        break;
+      } catch(e) { continue; }
+    }
+
+    // Hide hint once ready
+    const hint = document.getElementById('sound-hint');
+    if (hint) { hint.style.opacity='0'; setTimeout(()=>hint.remove(),600); }
+
+  } catch(e) { audioReady = false; }
+}
+
+function playPenScratch(charSpeed) {
+  if (!audioReady || !audioCtx || !penBuffer) return;
+  const now = audioCtx.currentTime;
+  // Throttle — don't play on every single character, sounds too busy
+  if (now - lastSoundTime < 0.055) return;
+  lastSoundTime = now;
+
+  const src = audioCtx.createBufferSource();
+  src.buffer = penBuffer;
+
+  // Vary pitch slightly per character for natural feel
+  src.playbackRate.value = 0.9 + Math.random() * 0.25;
+
+  // Only play a tiny slice (0.08s) so it's a short scratch not a long scrape
+  const sliceStart = Math.random() * Math.max(0, penBuffer.duration - 0.15);
+  src.loopStart  = sliceStart;
+  src.loopEnd    = sliceStart + 0.08;
+  src.loop = false;
+
+  const gain = audioCtx.createGain();
+  // Very soft — ambient, not distracting
+  const pressure = Math.max(0.1, 1 - charSpeed / 40);
+  gain.gain.value = 0.10 + pressure * 0.10;
+
+  // Slight high-shelf boost so it sounds crisp not muddy
+  const shelf = audioCtx.createBiquadFilter();
+  shelf.type = 'highshelf';
+  shelf.frequency.value = 4000;
+  shelf.gain.value = 3;
+
+  src.connect(shelf); shelf.connect(gain); gain.connect(audioCtx.destination);
+  src.start(now, sliceStart, 0.08);
+}
+
+// Trigger init on first real user gesture
+['mousedown','touchstart','keydown'].forEach(ev => {
+  document.getElementById('intro-overlay').addEventListener(ev, initAudio, { once:true, passive:true });
+});
+document.getElementById('intro-overlay').addEventListener('mousemove', initAudio, { once:true, passive:true });
+
+function onCharTyped(speed) { playPenScratch(speed || 5); }
+
+/* ══ STEPS ══════════════════════════════════════════════════════ */
+const STEPS = [
+  { segs:[{t:"Hey, I'm ",c:""},{t:"Budhaditya.",c:"hl-name"}],
+    speed:55, fs:3.8, left:18, top:20, rot:-0.8, hold:900 },
+  { segs:[{t:"You're probably wondering how I got here.",c:""}],
+    speed:42, fs:1.95, left:28, top:36, rot:0.5, hold:700 },
+  { segs:[{t:"Truth is, I didn't plan it.",c:""}],
+    speed:52, fs:2.3, left:12, top:52, rot:-0.6, hold:750 },
+  { segs:[{t:"I just kept trying things,",c:""}],
+    speed:44, fs:1.9, left:35, top:44, rot:0.4, hold:600 },
+  { segs:[{t:"building ideas,",c:""}],
+    speed:58, fs:1.75, left:50, top:28, rot:-0.5, hold:600 },
+  { segs:[{t:"getting excited about really small things.",c:""}],
+    speed:40, fs:1.7, left:8, top:64, rot:0.6, hold:700 },
+  { segs:[{t:"I still have ",c:""},{t:"major kid energy.",c:"hl-kid"}],
+    speed:46, fs:2.4, left:22, top:56, rot:-0.4, hold:900 },
+  { segs:[{t:"Fyi — I rewatch ",c:""},{t:"Wimpy Kid",c:"hl-wimpy"},{t:" for emotional support.",c:""}],
+    speed:42, fs:1.8, left:14, top:72, rot:0.5, hold:850 },
+  { segs:[{t:"So\u2026 that's me.",c:""}],
+    speed:60, fs:2.8, left:50, top:38, rot:-0.3, hold:800, center:true },
+  { segs:[{t:"Welcome to my journey.",c:""}],
+    speed:50, fs:2.4, left:50, top:54, rot:0.4, hold:3000, center:true },
+];
+
+/* ══ DOODLES — self-drawing via SVG stroke animation ═══════════ */
+const DOODLES = [
+  { atStep:1, left:'80%', top:'14%', rot:'-8deg', text:'← curiosity > planning' },
+  { atStep:2, left:'6%',  top:'20%', rot:'5deg',  text:'(3rd year, Christ Univ)' },
+  { atStep:3, left:'68%', top:'58%', rot:'-6deg', text:'*ships anyway' },
+  { atStep:4, left:'60%', top:'42%', rot:'7deg',  text:'→ still obsessed with it' },
+  { atStep:5, left:'5%',  top:'78%', rot:'-4deg', text:'small things = big energy' },
+  { atStep:6, left:'72%', top:'76%', rot:'9deg',  text:'no cap 😭' },
+  { atStep:7, left:'3%',  top:'44%', rot:'-7deg', text:'↑ 100% true' },
+  { atStep:8, left:'66%', top:'28%', rot:'3deg',  text:'✦', big:true },
+  { atStep:8, left:'13%', top:'12%', rot:'-5deg', text:'✦', big:true },
+  { atStep:8, left:'88%', top:'50%', rot:'8deg',  text:'✦', big:true },
+  { atStep:9, left:'76%', top:'54%', rot:'6deg',  text:"(that's a wrap ✌)" },
+];
+
+function spawnDoodle(d) {
+  const el = document.createElement('div');
+  el.className = 'doodle-note';
+  el.style.cssText = `left:${d.left};top:${d.top};transform:rotate(${d.rot});font-size:${d.big?'1.2rem':'0.78rem'}`;
+  el.textContent = d.text;
+  document.getElementById('intro-page').appendChild(el);
+
+  // Self-draw: fade in quickly then "write" via clip-path width animation
+  requestAnimationFrame(() => {
+    el.style.opacity = '0';
+    el.style.clipPath = 'inset(0 100% 0 0)';
+    el.style.transition = 'opacity 0.2s ease';
+    requestAnimationFrame(() => {
+      el.style.opacity = '1';
+      // Animate clip-path from right-clipped to fully visible
+      setTimeout(() => {
+        el.style.transition = 'clip-path 0.55s cubic-bezier(.4,0,.2,1)';
+        el.style.clipPath = 'inset(0 0% 0 0)';
+      }, 50);
+    });
+  });
+}
+
+/* ══ PROGRESS DOTS ═════════════════════════════════════════════ */
+const dotsWrap = document.getElementById('progress-dots');
+const dots = [];
+STEPS.forEach(() => {
+  const d = document.createElement('div');
+  d.className = 'pdot';
+  dotsWrap.appendChild(d);
+  dots.push(d);
+});
+function setDot(i) {
+  dots.forEach((d,j) => {
+    d.classList.remove('active','done');
+    if (j < i)  d.classList.add('done');
+    if (j === i) d.classList.add('active');
+  });
+}
+
+const SPEED_VAR = 0.28, FADE_OUT = 480, GAP = 160;
+let introSkipped = false;
+const page = document.getElementById('intro-page');
+
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* ── type plain chars ── */
+function typeChars(container, text, speed, pen) {
+  return new Promise(resolve => {
+    let i = 0;
+    function next() {
+      if (introSkipped) { resolve(); return; }
+      if (i >= text.length) { resolve(); return; }
+      const ch = text[i];
+      const s = document.createElement('span');
+      s.className = 'char';
+      s.textContent = ch === ' ' ? '\u00A0' : ch;
+      container.insertBefore(s, pen);
+      onCharTyped(speed); // pen scratch sound
+      const v = 1 + (Math.random()*2-1)*SPEED_VAR;
+      const isPunct = [',','.','—','…','!','?'].includes(ch);
+      i++;
+      setTimeout(next, speed * v * (isPunct ? 2.3 : 1));
+    }
+    next();
+  });
+}
+
+/* ── type highlighted span ── */
+function typeHighlight(container, text, cls, speed, pen) {
+  return new Promise(resolve => {
+    const w = document.createElement('span');
+    w.className = cls;
+    container.insertBefore(w, pen);
+    let i = 0;
+    function next() {
+      if (introSkipped) { resolve(); return; }
+      if (i >= text.length) { resolve(); return; }
+      w.textContent = text.slice(0, i + 1);
+      if (w.nextSibling !== pen) container.insertBefore(pen, w.nextSibling || null);
+      onCharTyped(speed);
+      const v = 1 + (Math.random()*2-1)*SPEED_VAR;
+      const isPunct = [',','.','—','…','!','?'].includes(text[i]);
+      i++;
+      setTimeout(next, speed * v * (isPunct ? 2.3 : 1));
+    }
+    next();
+  });
+}
+
+async function writeInto(el, segs, speed) {
+  const pen = document.createElement('span');
+  pen.className = 'pen-cursor';
+  el.appendChild(pen);
+  for (const seg of segs) {
+    if (introSkipped) break;
+    if (seg.c) await typeHighlight(el, seg.t, seg.c, speed, pen);
+    else        await typeChars(el, seg.t, speed, pen);
+  }
+  await wait(200);
+  if (pen.parentNode) pen.remove();
+}
+
+/* ══ MAIN RUNNER ════════════════════════════════════════════════ */
+async function runIntro() {
+  setTimeout(() => document.getElementById('journal-header').classList.add('show'), 700);
+  const doodleMap = {};
+  DOODLES.forEach(d => (doodleMap[d.atStep] = doodleMap[d.atStep] || []).push(d));
+
+  for (let i = 0; i < STEPS.length; i++) {
+    if (introSkipped) break;
+    const step = STEPS[i];
+    setDot(i);
+
+    const el = document.createElement('div');
+    el.className = 'floating-line';
+    el.style.fontSize  = `${step.fs}rem`;
+    el.style.left = `${step.center ? 50 : Math.min(step.left, 60)}%`;
+    el.style.top  = `${Math.min(step.top, 76)}%`;
+    if (step.center) el.style.transform = `translateX(-50%) rotate(${step.rot}deg)`;
+    else             el.style.transform = `rotate(${step.rot}deg)`;
+    page.appendChild(el);
+
+    await wait(30);
+    el.classList.add('visible');
+    await writeInto(el, step.segs, step.speed);
+    await wait(step.hold || 700);
+
+    if (doodleMap[i]) doodleMap[i].forEach(spawnDoodle);
+    if (introSkipped) break;
+
+    if (i < STEPS.length - 1) {
+      el.classList.add('fading');
+      el.classList.remove('visible');
+      await wait(FADE_OUT + GAP);
+      if (el.parentNode) el.remove();
+    }
+  }
+
+  if (introSkipped) return;
+  dots.forEach(d => { d.classList.remove('active'); d.classList.add('done'); });
+  await wait(600);
+  document.getElementById('scroll-hint').classList.add('show');
+
+  // Hide pen cursor when done
+  penEl.style.transition = 'opacity 0.8s ease';
+  penEl.style.opacity = '0';
+
+  setTimeout(() => { if (!introSkipped) triggerBurnExit(); }, 2500);
+}
+
+/* ══ COLOR BURST OUTRO ══════════════════════════════════════════ */
+function triggerBurnExit() {
+  if (introSkipped) return;
+  introSkipped = true;
+  penEl.style.opacity = '0';
+
+  const canvas = document.getElementById('burn-canvas');
+  canvas.style.display = 'block';
+  const W = canvas.width  = window.innerWidth;
+  const H = canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const cx = W/2, cy = H/2;
+
+  const COLORS = ['#00e5b4','#ff2d6b','#ffb800','#00b8ff','#ff6b35','#a855f7','#22d3ee','#f43f5e'];
+  const blobs = [];
+  for (let i = 0; i < 100; i++) {
+    const angle = (Math.PI*2*i)/100 + (Math.random()-0.5)*0.5;
+    const dist  = 40 + Math.random()*Math.max(W,H)*0.92;
+    blobs.push({
+      tx: Math.cos(angle)*dist, ty: Math.sin(angle)*dist,
+      r: 6 + Math.random()*50,
+      color: COLORS[Math.floor(Math.random()*COLORS.length)],
+      dur: 0.45 + Math.random()*0.45, del: Math.random()*0.14,
+    });
+  }
+
+  const wipeColors = ['#00e5b4','#ff2d6b','#ffb800','#a855f7','#080808'];
+  const maxR = Math.hypot(W,H)*0.58;
+  const T0 = performance.now(), DUR = 1100;
+
+  function frame(now) {
+    const el = now - T0, t = Math.min(el/DUR, 1);
+    ctx.clearRect(0,0,W,H);
+    blobs.forEach(b => {
+      const bt = Math.max(0, Math.min((el/1000-b.del)/b.dur, 1));
+      if (!bt) return;
+      const ease = 1-Math.pow(1-bt,3);
+      const alpha = bt < 0.65 ? bt/0.65 : 1-(bt-0.65)/0.35;
+      ctx.globalAlpha = alpha*0.82;
+      ctx.fillStyle = b.color;
+      ctx.beginPath();
+      ctx.arc(cx+b.tx*ease, cy+b.ty*ease, b.r*(0.3+ease*0.7), 0, Math.PI*2);
+      ctx.fill();
+    });
+    const wt = Math.max(0,(t-0.1)/0.9);
+    if (wt > 0) {
+      wipeColors.slice().reverse().forEach((col,i) => {
+        const s = wipeColors.length-1-i;
+        const st = Math.max(0, Math.min(wt*wipeColors.length-s,1));
+        const r = maxR*Math.pow(st,0.5);
+        if (r>0){ ctx.globalAlpha=1; ctx.fillStyle=col; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill(); }
+      });
+    }
+    ctx.globalAlpha = 1;
+    if (t < 1) { requestAnimationFrame(frame); }
+    else {
+      ctx.fillStyle='#080808'; ctx.fillRect(0,0,W,H);
+      dismissIntro();
+      canvas.style.transition='opacity 0.45s ease'; canvas.style.opacity='0';
+      setTimeout(()=>{ canvas.style.display='none'; canvas.style.opacity='1'; }, 550);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function dismissIntro() {
+  document.getElementById('intro-overlay').style.display = 'none';
+  penEl.style.display = 'none';
+  document.body.style.overflowY = '';
+}
+
+runIntro();
+
+/* ══════════════════════════════════════════════
+   PORTFOLIO SCRIPTS (original)
+══════════════════════════════════════════════ */
+
 /* ── CURSOR ── */
 const c1=document.getElementById('cur'),c2=document.getElementById('cur2');
 document.addEventListener('mousemove',e=>{
@@ -969,7 +1857,6 @@ function drawPts(){
       cx.fillStyle=`rgba(0,229,180,${glow*.12})`;cx.fill();
     }
   });
-  // connect nearby
   for(let i=0;i<pts.length;i++){
     for(let j=i+1;j<pts.length;j++){
       const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y;
@@ -1090,15 +1977,36 @@ ctx.fillStyle='#00e5b4';ctx.font='bold 22px monospace';ctx.textAlign='center';ct
 /* ── CHATBOT ── */
 (function(){
   let kb=[
-    {p:[/who (are )?you/i,/tell me about you/i,/budhaditya/i],r:"I'm Budhaditya Sanyal — 3rd year BA English Honours at Christ University, Bengaluru. I build products, ship games, and do growth & GTM."},
-    {p:[/study|college|university|christ/i],r:"Christ University, Bengaluru."},
-    {p:[/like|interest|passion/i],r:"Human connection, intelligent systems (LLMs), and interactive experiences like game development."},
-    {p:[/what (can|do) you do|capabilit/i],r:"Product, B2B sales, GTM, full-stack dev, game development, exploring LLMs."},
-    {p:[/done|built|projects|experience/i],r:"$10K+ game revenue in first week, multiple games shipped, helped raise ₹1.2Cr seed funding. Experience section has full details."},
-    {p:[/contact|email|phone/i],r:"Reveal the email in the Contact section, or reach out via LinkedIn."},
-    {p:[/portfolio|website/i],r:"You're on it! Scroll around or use the nav."},
-    {p:[/roblox|game/i],r:"Built games for One Piece, Attack on Titan, Snowpiercer on Roblox. $10K+ first week, millions of visits total."}
+    {p:[/who (are|is).*you/i,/tell me about (you|yourself)/i,/budhaditya/i,/intro/i],r:"I'm Budhaditya Sanyal — 3rd year BA English Honours at Christ University, Bengaluru. I build products, ship games, work on B2B sales, and explore AI/LLMs. Currently figuring out how to make the biggest dent possible."},
+    {p:[/study|college|university|christ|school|degree/i],r:"Christ University, Bengaluru — BA English Honours, 3rd year. Focused on linguistics and computational methods."},
+    {p:[/earlyjobs|early jobs/i],r:"At EarlyJobs (Mar-Jun 2025), I was part of the team that raised ₹1.2 Cr in seed funding. Onboarded major clients like JustDial, Quess Corps, RBL Bank, YES Bank. Handled GTM & partnerships."},
+    {p:[/surgehouse|surge house/i],r:"Team Lead / B2B Sales at SurgeHouse (Oct 2023-Oct 2024). Led market analysis, lead gen, and pitched to angel investors. Drove business growth across multiple verticals."},
+    {p:[/roblox|game.*dev/i],r:"Game Developer & Marketing Head for multiple Roblox studios (Feb 2020-Jan 2024). Built 3D assets and environments for Attack on Titan, Snowpiercer, One Piece games. Projects hit $10K+ revenue in first week, millions of visits total."},
+    {p:[/cook.*klean|cook and klean/i],r:"Sales & Business Development at Cook & Klean (Feb-Mar 2025). Short but intense stint in B2B sales, lead gen, and conversion optimization."},
+    {p:[/ngo|cohesive minds|mental health/i],r:"Special Ed Intern at Cohesive Minds for Mental Health Foundation (May-Jul 2024). Designed curriculum for kids with learning disabilities, organized seminars, secured ₹90K sponsorship."},
+    {p:[/skill|tech|technology|what.*know|tools/i],r:"B2B Sales, GTM Strategy, 3D Modeling, Game Development, Full-stack Dev (React, Node.js), LLMs, Data Analysis, Team Leadership, Market Research, CRM, Partnerships."},
+    {p:[/b2b|sales|prospecting/i],r:"Heavy B2B sales experience — lead generation, prospecting, cold calling, CRM, partnership management. Worked at EarlyJobs, SurgeHouse, and Cook & Klean."},
+    {p:[/gtm|go.to.market|growth|marketing/i],r:"GTM Strategy, market research, customer acquisition, storytelling, event planning. Helped raise ₹1.2 Cr at EarlyJobs through positioning and investor materials."},
+    {p:[/code|coding|dev|programming|fullstack/i],r:"Full-stack development with React, Node.js, Python. Built web apps, APIs, and this portfolio from scratch. Also game development and 3D modeling."},
+    {p:[/llm|ai|language model|artificial intelligence/i],r:"Currently exploring LLMs and computational linguistics. Big focus on understanding how AI can build helpful tools and products. Experimenting with various AI integrations."},
+    {p:[/3d|modeling|design/i],r:"3D modeling for game development — designed weaponry, clothing, and environments for Roblox games. Contributed to assets with millions of visits."},
+    {p:[/game|games|revenue|launched/i],r:"Built multiple Roblox games for franchises like Attack on Titan, Snowpiercer, One Piece. One project generated $10K+ revenue in the first week. Led projects that became top engagement games in Q1."},
+    {p:[/funding|seed|fundrais|investor/i],r:"Part of the team that raised ₹1.2 Crore in seed funding at EarlyJobs. Built pitch materials, conducted market analysis, and supported investor relations."},
+    {p:[/done|built|made|projects|experience|accomplish/i],r:"Raised ₹1.2Cr seed funding, shipped 4+ games ($10K+ first week revenue), onboarded clients like JustDial & RBL Bank, secured ₹90K sponsorships, built this portfolio from scratch. Full details in the Experience section."},
+    {p:[/revenue|money|earn/i],r:"Games generated $10K+ in first week. Also secured ₹90K in sponsorships for the NGO event. Worked on fundraising that brought in ₹1.2 Cr."},
+    {p:[/current|now|doing|working on|latest/i],r:"Currently in 3rd year at Christ University. Exploring LLMs, computational linguistics, and figuring out how to make the biggest impact. Open to opportunities in product, growth, and business development."},
+    {p:[/looking for|hire|job|opportunity|position/i],r:"Open to opportunities in product development, growth/GTM roles, B2B sales, game dev, or anything involving building cool stuff with AI. Hit the Contact section to reach out!"},
+    {p:[/like|interest|passion|enjoy|love/i],r:"Human connection, intelligent systems (LLMs), interactive experiences like games, and solving real problems through products. Big on shipping fast and learning publicly."},
+    {p:[/why|motivation|drive/i],r:"I build things I want to use. Some don't work. Some do. One game surprised me with huge engagement. Now I'm optimizing my way through the learning curve to make bigger impact."},
+    {p:[/contact|email|phone|reach|linkedin/i],r:"Reveal the email in the Contact section above, or reach out via LinkedIn (link in footer). Also have my phone number listed if you prefer calling."},
+    {p:[/portfolio|website|site|this/i],r:"You're on it! Built from scratch. Scroll around or use the nav to explore — there's a playable game too!"},
+    {p:[/attack on titan|aot|anime/i],r:"Built 3D assets and environments for Attack on Titan games on Roblox. Great franchise to work with — huge player engagement."},
+    {p:[/one piece|snowpiercer/i],r:"Created game assets for One Piece and Snowpiercer games on Roblox. These projects contributed to millions of visits."},
+    {p:[/justdial|quess|rbl|yes bank/i],r:"Onboarded these major clients at EarlyJobs — JustDial, Quess Corps, RBL Bank, and YES Bank. Part of the B2B partnerships work."},
+    {p:[/bangalore|bengaluru/i],r:"Based in Bengaluru (Bangalore), India. Studied here at Christ University and worked at EarlyJobs, SurgeHouse, and Cook & Klean locally."},
+    {p:[/advice|tip|learn|beginner/i],r:"Ship things. Don't wait for perfect. I started making stuff I wanted to use — some failed, some worked. The key is putting things out there and learning fast."}
   ];
+
   function esc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
   try{
     const extra=document.getElementById('bs-kb');
@@ -1121,10 +2029,10 @@ ctx.fillStyle='#00e5b4';ctx.font='bold 22px monospace';ctx.textAlign='center';ct
     msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;
   }
   function answer(q){
+    if(!q.trim())return "Ask me something!";
     for(const item of kb)for(const rx of item.p)if(rx.test(q))return item.r;
-    if(/game|revenue/i.test(q))return "Multiple games, $10K+ launch week revenue.";
-    if(/llm|ai|language/i.test(q))return "Exploring LLMs and in-game AI — it's a big focus right now.";
-    return "Not sure about that one. Try: Who are you? What have you built? Where do you study?";
+    if(/^(hi|hello|hey|yo|sup|what'?s up)/i.test(q))return "Hey! What would you like to know about Budhaditya?";
+    return "Hmm, not sure about that one. Try asking: Who are you? What have you built? What companies did you work at? What are your skills?";
   }
   tog.addEventListener('click',()=>{chat.classList.toggle('hidden');tog.classList.toggle('hidden');inp.focus()});
   close.addEventListener('click',()=>{chat.classList.add('hidden');tog.classList.remove('hidden')});
